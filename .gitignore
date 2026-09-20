@@ -1,0 +1,17 @@
+# Signing key - never commit. build.ps1 generates a fresh one if absent.
+*.keystore
+*.jks
+
+# Android build output
+android/out/
+*.apk
+
+# Generated from ../index.html by mkhtml.py at build time
+android/assets/index.html
+
+# Local noise
+__pycache__/
+*.pyc
+.DS_Store
+Thumbs.db
+desktop.ini
