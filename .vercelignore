@@ -1,0 +1,4 @@
+# The site is just index.html at the root; nothing else needs uploading or serving.
+android/
+*.md
+.gitattributes
