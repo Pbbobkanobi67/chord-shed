@@ -20,7 +20,15 @@ Chord diagrams, fingerings and voicings up the neck — for ukulele and guitar.
 - **Sound** is a Karplus–Strong plucked string synthesized in the browser: shorter and brighter for
   nylon uke than for guitar. Strum a shape, or tap one string to hear it alone.
 - 18 chord qualities, a chord-name parser (`F#m7`, `Bbsus4`), interval-correct note spelling
-  (C7 shows B♭, not A♯), a left-handed mirror, a chord chart, and a chords-in-a-key helper.
+  (C7 shows B♭, not A♯), a left-handed mirror, and a chords-in-a-key helper.
+- **Tuner** — listens through the microphone and shows the note and how many cents sharp or flat,
+  using autocorrelation with parabolic peak interpolation over a 65–1400 Hz lag range. Also plays
+  reference pitches for each string of the current tuning, so it stays useful with the mic refused.
+- **Practice** — an eight-slot strum-pattern sequencer (down / up / muted chunk / rest) with tempo,
+  tap tempo, metronome click and six presets. It can follow a chart, one bar per chord.
+- **Charts** — as many saved chord charts as you like: name, duplicate, delete, reorder.
+
+The four sections are tabs, so a phone shows one at a time rather than one long scroll.
 
 Missing chord tones are reported rather than hidden — on four strings a ninth chord has to drop its
 fifth, and the tone chip greys out so you can see which one went.
@@ -54,10 +62,17 @@ cd android
 ```
 
 Output: `android/out/chord-shed.apk`. Package `com.chordshed.app`, minSdk 26 (Android 8.0),
-targetSdk 34, ~522 KB.
+targetSdk 34, ~530 KB.
 
-The APK **declares no permissions at all** — not even `INTERNET`. The page and its three typefaces
-ship inside the package, so it works in airplane mode and cannot phone home.
+The APK declares exactly one permission, `RECORD_AUDIO`, which the tuner uses to hear the string you
+play. Audio is analysed in the page and discarded — nothing is recorded, stored or transmitted, and
+there is **no `INTERNET` permission** for it to be transmitted over. Refusing the mic costs you only
+the listening tuner; reference pitches still work. The page and its three typefaces ship inside the
+package, so the app works in airplane mode.
+
+A WebView needs the grant twice over: `WebChromeClient.onPermissionRequest` must call `grant()`
+*and* the OS permission must be held. `MainActivity` bridges the two — without that bridge
+`getUserMedia()` fails silently and the tuner simply never starts.
 
 ### Signing
 
