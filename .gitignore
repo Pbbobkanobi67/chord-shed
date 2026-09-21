@@ -15,3 +15,6 @@ __pycache__/
 .DS_Store
 Thumbs.db
 desktop.ini
+
+# Local Windows launcher icon, generated - not part of the app
+.icon/
