@@ -198,11 +198,14 @@ section.card{padding:16px}
 
 /* ---------- practice ---------- */
 .pracgrid{display:grid; grid-template-columns:minmax(0,1fr) minmax(0,320px); gap:22px; align-items:start}
-@media (max-width:860px){ .pracgrid{grid-template-columns:1fr} }
-.pattern{display:grid; grid-template-columns:repeat(8,1fr); gap:5px; margin-top:6px}
+@media (max-width:860px){ .pracgrid{grid-template-columns:minmax(0,1fr)} }
+/* minmax(0,1fr), not 1fr: a bare 1fr track cannot shrink below the slots'
+   min-content, which aspect-ratio + min-height pins at ~38px, pushing the
+   whole card past a 390px screen. */
+.pattern{display:grid; grid-template-columns:repeat(8,minmax(0,1fr)); gap:5px; margin-top:6px}
 .slot{aspect-ratio:1/1.35; border:1px solid var(--line); border-radius:9px; background:var(--paper);
   cursor:pointer; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:3px;
-  padding:0; color:var(--ink); min-height:52px}
+  padding:0; color:var(--ink); min-height:52px; min-width:0}
 .slot:hover{border-color:var(--line-2)}
 .slot .gl{font-size:19px; line-height:1; font-family:"IBM Plex Sans",sans-serif}
 .slot .bt{font:400 8.5px/1 "IBM Plex Mono",monospace; color:var(--ink-3)}
@@ -282,7 +285,14 @@ footer .colophon{flex:1 1 320px; display:flex; flex-direction:column; gap:2px}
   .acts .btn{padding:10px 10px; font-size:12.5px}
   .readnote{font-size:48px}
   section.card, .picker{padding:14px}
+  /* Eight slots across a phone gives ~35px targets. Two rows of four reads as
+     beats 1-2 then 3-4 and roughly doubles the tap area. */
+  .pattern{grid-template-columns:repeat(4,minmax(0,1fr)); gap:6px}
+  .slot{aspect-ratio:1.35/1; min-height:50px}
+  .slot .gl{font-size:21px}
 }
+/* No grid item may set a min-content floor wider than its track. */
+.chordsgrid > *, .pracgrid > *, .tunerwrap > *, .chartsgrid > *{min-width:0}
 @media (prefers-reduced-motion: reduce){ *{transition:none!important; animation:none!important} }
 </style>
 
