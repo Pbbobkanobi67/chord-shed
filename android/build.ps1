@@ -14,8 +14,9 @@ foreach ($p in $AAPT, $D8, $ALIGN, $SIGN, $JAR) {
   if (-not (Test-Path $p)) { throw "missing build tool: $p" }
 }
 
-$VERSION_CODE = 1
-$VERSION_NAME = '1.0'
+# versionCode must strictly increase or Android refuses the update.
+$VERSION_CODE = 2
+$VERSION_NAME = '1.1'
 $OUT = 'out'
 
 if (Test-Path $OUT) { Remove-Item $OUT -Recurse -Force }
