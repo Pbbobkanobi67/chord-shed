@@ -10,6 +10,13 @@ src = re.sub(r'<link rel="stylesheet" href="https://fonts\.googleapis\.com[^>]*>
 title = re.search(r'<title>(.*?)</title>', src).group(1)
 src = re.sub(r'<title>.*?</title>\s*', '', src, count=1)
 
+# Drop anything marked data-web-only -- e.g. the "download the Android app"
+# link, which is circular once you are already inside the Android app.
+src, n_comment = re.subn(r'[ \t]*<!--[^>]*?data-web-only.*?-->\n?', '', src, flags=re.DOTALL)
+src, n_element = re.subn(
+    r'[ \t]*<(\w+)\b[^>]*\bdata-web-only\b[^>]*>.*?</\1>\n?', '', src, flags=re.DOTALL)
+assert n_element >= 1, 'expected at least one data-web-only element to strip'
+
 HEAD = '''<!doctype html>
 <html lang="en">
 <head>
@@ -45,4 +52,7 @@ assert '<body>' in out and '</head>' in out, 'head/body wrapping failed'
 assert 'fonts.googleapis' not in out, 'network font link still present'
 assert out.count('<title>%s</title>' % title) == 1, 'document title duplicated'
 assert '</script>' in out and 'Karplus' in out, 'app script missing'
-print('assets/index.html written: %d bytes -- checks ok' % len(out))
+assert 'data-web-only' not in out, 'a web-only element survived stripping'
+assert 'releases/latest/download' not in out, 'APK download link leaked into the APK'
+print('assets/index.html written: %d bytes -- checks ok '
+      '(stripped %d web-only element(s), %d comment(s))' % (len(out), n_element, n_comment))
