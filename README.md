@@ -2,8 +2,7 @@
 
 Chord diagrams, fingerings and voicings up the neck — for ukulele and guitar.
 
-**Android:** [download the APK](../../releases/latest) · **Web:** open `index.html`, or deploy the
-repo root as a static site — there is nothing to build.
+**Web:** https://chord-shed.vercel.app · **Android:** [download the APK](../../releases/latest)
 
 ---
 
