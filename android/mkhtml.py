@@ -53,6 +53,7 @@ assert 'fonts.googleapis' not in out, 'network font link still present'
 assert out.count('<title>%s</title>' % title) == 1, 'document title duplicated'
 assert '</script>' in out and 'Karplus' in out, 'app script missing'
 assert 'data-web-only' not in out, 'a web-only element survived stripping'
-assert 'releases/latest/download' not in out, 'APK download link leaked into the APK'
+for leak in ('dl/chord-shed.apk', 'releases/latest', 'github.com'):
+    assert leak not in out, 'download link leaked into the APK: %s' % leak
 print('assets/index.html written: %d bytes -- checks ok '
       '(stripped %d web-only element(s), %d comment(s))' % (len(out), n_element, n_comment))

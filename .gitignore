@@ -5,6 +5,8 @@
 # Android build output
 android/out/
 *.apk
+# ...except the copy the website serves, so phones never touch github.com
+!dl/chord-shed.apk
 
 # Generated from ../index.html by mkhtml.py at build time
 android/assets/index.html

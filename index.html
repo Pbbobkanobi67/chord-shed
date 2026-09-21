@@ -261,6 +261,10 @@ footer .colophon{flex:1 1 320px; display:flex; flex-direction:column; gap:2px}
 .getapp em{display:block; font-style:normal; font:400 10.5px/1.3 "IBM Plex Mono",monospace;
   color:var(--ink-3); letter-spacing:.02em}
 .getapp:hover em{color:var(--accent-ink)}
+.getappwrap{flex:0 0 auto; display:flex; flex-direction:column; align-items:flex-start; gap:6px}
+.altdl{font:400 11px/1.3 "IBM Plex Sans",sans-serif; color:var(--ink-3);
+  text-decoration:underline; text-underline-offset:2px}
+.altdl:hover{color:var(--accent-ink)}
 
 /* ---------- phone ---------- */
 @media (max-width:720px){
@@ -493,16 +497,23 @@ footer .colophon{flex:1 1 320px; display:flex; flex-direction:column; gap:2px}
       <span>Voicings are generated for the selected tuning, then ranked for reach and open strings — not pulled from a fixed chart.</span>
       <span>Sound is a Karplus–Strong plucked string, rendered in the browser.</span>
     </div>
-    <!-- data-web-only: stripped by android/mkhtml.py, since inside the app this link is circular -->
-    <a class="getapp" data-web-only
-       href="https://github.com/Pbbobkanobi67/chord-shed/releases/latest/download/chord-shed.apk">
-      <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-           stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-        <path d="M12 3v12" /><path d="M7.5 10.5 12 15l4.5-4.5" />
-        <path d="M4 18.5v1A1.5 1.5 0 0 0 5.5 21h13a1.5 1.5 0 0 0 1.5-1.5v-1" />
-      </svg>
-      <span>Android app<em>APK · 522 KB · works offline</em></span>
-    </a>
+    <!-- data-web-only: stripped by android/mkhtml.py, since inside the app this link is circular.
+         Served from this origin, not github.com: the GitHub Android app claims github.com links
+         and opens its own release page instead of downloading. -->
+    <div class="getappwrap" data-web-only>
+      <a class="getapp" href="/dl/chord-shed.apk" download="chord-shed.apk"
+         type="application/vnd.android.package-archive">
+        <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+             stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M12 3v12" /><path d="M7.5 10.5 12 15l4.5-4.5" />
+          <path d="M4 18.5v1A1.5 1.5 0 0 0 5.5 21h13a1.5 1.5 0 0 0 1.5-1.5v-1" />
+        </svg>
+        <span>Android app<em>APK · 530 KB · works offline</em></span>
+      </a>
+      <a class="altdl" href="https://github.com/Pbbobkanobi67/chord-shed/releases/latest">
+        or get it from GitHub Releases
+      </a>
+    </div>
   </footer>
 </div>
 
