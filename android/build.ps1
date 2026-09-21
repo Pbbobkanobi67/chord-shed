@@ -15,8 +15,8 @@ foreach ($p in $AAPT, $D8, $ALIGN, $SIGN, $JAR) {
 }
 
 # versionCode must strictly increase or Android refuses the update.
-$VERSION_CODE = 4
-$VERSION_NAME = '1.3'
+$VERSION_CODE = 5
+$VERSION_NAME = '1.4'
 $OUT = 'out'
 
 if (Test-Path $OUT) { Remove-Item $OUT -Recurse -Force }
@@ -133,3 +133,4 @@ try {
 $size = (Get-Item "$OUT\chord-shed.apk").Length
 Write-Host ''
 Write-Host ("BUILT  out\chord-shed.apk  ({0:N0} KB)" -f ($size/1KB)) -ForegroundColor Green
+

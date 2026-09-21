@@ -1321,18 +1321,46 @@ const tuner = {
   async start(){
     if (this.on){ this.stop(); return; }
     const btn = $('listenBtn');
+    const h = $('tunerHint');
     btn.disabled = true; btn.textContent = 'Asking…';
+
+    if (!window.isSecureContext){
+      btn.disabled = false; btn.textContent = 'Start listening';
+      h.className = 'hint err';
+      h.textContent = 'This page is not running in a secure context, so the browser will not open a ' +
+        'microphone. Reference pitches on the right still work.';
+      return;
+    }
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia){
+      btn.disabled = false; btn.textContent = 'Start listening';
+      h.className = 'hint err';
+      h.textContent = 'This browser exposes no microphone API (navigator.mediaDevices is missing). ' +
+        'Reference pitches on the right still work.';
+      return;
+    }
+
     try{
       this.stream = await navigator.mediaDevices.getUserMedia({
         audio:{echoCancellation:false, noiseSuppression:false, autoGainControl:false}
       });
     }catch(e){
       btn.disabled = false; btn.textContent = 'Start listening';
-      const h = $('tunerHint');
       h.className = 'hint err';
-      h.textContent = (e && e.name === 'NotAllowedError')
-        ? 'Microphone access was refused. The reference pitches on the right still work — tap a string and tune by ear.'
-        : 'No microphone available. Use the reference pitches on the right instead.';
+      const name = (e && e.name) ? e.name : 'Error';
+      const msg  = (e && e.message) ? e.message : '';
+      if (name === 'NotAllowedError'){
+        h.textContent = 'Microphone access was refused. The reference pitches on the right still work — ' +
+          'tap a string and tune by ear.';
+      } else if (name === 'NotFoundError' || name === 'OverconstrainedError'){
+        h.textContent = 'No microphone was found on this device. Reference pitches still work. [' + name + ']';
+      } else if (name === 'NotReadableError'){
+        h.textContent = 'The microphone is busy — another app may be holding it. Close it and try again. [' +
+          name + ']';
+      } else {
+        /* Say what actually broke rather than guessing; this is what gets reported back. */
+        h.textContent = 'Could not open the microphone — ' + name + (msg ? ': ' + msg : '') +
+          '. Reference pitches on the right still work.';
+      }
       return;
     }
     const AC = window.AudioContext || window.webkitAudioContext;
