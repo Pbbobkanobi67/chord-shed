@@ -147,6 +147,11 @@ $verJson = @{
   versionCode = $VERSION_CODE
   apk         = '/dl/chord-shed.apk'
   released    = $stamp
+  # size and releasedAt are what the app hub's version badge reads (Farkle's
+  # shape). `released` stays exactly as it was: the in-app update check has
+  # shipped against it, so renaming it would break installed copies.
+  size        = $size
+  releasedAt  = (Get-Date).ToUniversalTime().ToString('yyyy-MM-ddTHH:mm:ss.fffZ')
   notes       = 'See the release notes on GitHub for what changed.'
 } | ConvertTo-Json
 Set-Content -Path '../version.json' -Value $verJson -Encoding UTF8
