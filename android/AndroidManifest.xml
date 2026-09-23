@@ -6,6 +6,9 @@
          and discarded; nothing is recorded, stored or sent anywhere. The app still
          declares no INTERNET permission. -->
     <uses-permission android:name="android.permission.RECORD_AUDIO" />
+    <!-- Chromium's audio input path configures echo cancellation / audio mode
+         through AudioManager; without this, opening capture can fail outright. -->
+    <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />
     <uses-feature android:name="android.hardware.microphone" android:required="false" />
 
     <!-- Used only by Options > Check for updates, which fetches one small version

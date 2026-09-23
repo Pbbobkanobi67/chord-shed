@@ -3,11 +3,17 @@ package com.chordshed.app;
 import android.Manifest;
 import android.app.Activity;
 import android.content.ActivityNotFoundException;
+import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.content.res.Configuration;
 import android.graphics.Color;
+import android.media.AudioFormat;
+import android.media.AudioManager;
+import android.media.AudioRecord;
+import android.media.AudioRecordingConfiguration;
+import android.media.MediaRecorder;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
@@ -28,6 +34,7 @@ import java.io.InputStream;
 import java.text.DateFormat;
 import java.util.Collections;
 import java.util.Date;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -305,6 +312,70 @@ public class MainActivity extends Activity {
         @JavascriptInterface
         public boolean granted() {
             return hasMicPermission();
+        }
+
+        /**
+         * Opens the microphone from native code and reports what happened. This
+         * sits below WebView entirely, so it separates "Chromium will not open
+         * capture" from "this device refuses capture to anyone".
+         * Runs on the JS bridge thread, not the UI thread.
+         */
+        @JavascriptInterface
+        public String selfTest() {
+            StringBuilder sb = new StringBuilder();
+            AudioManager am = null;
+            try {
+                am = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
+                sb.append("micMuted=").append(am.isMicrophoneMute())
+                  .append(" audioMode=").append(am.getMode());
+            } catch (Throwable t) {
+                sb.append("AudioManager error: ").append(t.getClass().getSimpleName());
+            }
+
+            if (am != null && Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+                try {
+                    List<AudioRecordingConfiguration> act = am.getActiveRecordingConfigurations();
+                    sb.append(" otherRecorders=").append(act == null ? -1 : act.size());
+                } catch (Throwable t) {
+                    sb.append(" otherRecorders=err");
+                }
+            }
+
+            final int rate = 44100;
+            int min = AudioRecord.getMinBufferSize(rate, AudioFormat.CHANNEL_IN_MONO,
+                    AudioFormat.ENCODING_PCM_16BIT);
+            sb.append(" minBuf=").append(min);
+
+            AudioRecord rec = null;
+            try {
+                rec = new AudioRecord(MediaRecorder.AudioSource.MIC, rate,
+                        AudioFormat.CHANNEL_IN_MONO, AudioFormat.ENCODING_PCM_16BIT,
+                        Math.max(min > 0 ? min : 4096, 4096));
+                sb.append(" initState=").append(rec.getState())
+                  .append(rec.getState() == AudioRecord.STATE_INITIALIZED ? "(ok)" : "(FAILED)");
+                if (rec.getState() == AudioRecord.STATE_INITIALIZED) {
+                    rec.startRecording();
+                    sb.append(" recording=").append(rec.getRecordingState() ==
+                            AudioRecord.RECORDSTATE_RECORDING);
+                    short[] buf = new short[2048];
+                    int n = rec.read(buf, 0, buf.length);
+                    int peak = 0;
+                    for (int i = 0; i < Math.max(0, n); i++) {
+                        int v = Math.abs(buf[i]);
+                        if (v > peak) peak = v;
+                    }
+                    sb.append(" framesRead=").append(n).append(" peak=").append(peak);
+                    rec.stop();
+                }
+            } catch (Throwable t) {
+                sb.append(" EXCEPTION ").append(t.getClass().getSimpleName())
+                  .append(": ").append(String.valueOf(t.getMessage()));
+            } finally {
+                if (rec != null) {
+                    try { rec.release(); } catch (Throwable ignored) { }
+                }
+            }
+            return sb.toString();
         }
 
         @JavascriptInterface

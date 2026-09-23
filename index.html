@@ -1564,6 +1564,12 @@ const tuner = {
         h.textContent = 'Could not open the microphone. (Tried: ' + failures.join(', ') + ') ' +
           'Reference pitches on the right still work.';
       }
+      /* The ladder failed. Open the mic from native code, below WebView, to
+         find out whether the device refuses everyone or only Chromium. */
+      if (window.Mic && typeof window.Mic.selfTest === 'function'){
+        try{ diag.push('native AudioRecord: ' + window.Mic.selfTest()); }
+        catch(e){ diag.push('native AudioRecord: bridge threw ' + e); }
+      }
       this.showDiag();
       return;
     }
