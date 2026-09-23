@@ -1598,6 +1598,8 @@ const tuner = {
     h.className = 'hint';
     h.textContent = 'Play one string at a time. Nothing is recorded or sent anywhere.' +
       (this.captureMode === 'default' ? ' (Using the device’s processed input.)' : '');
+    $('readNote').textContent = 'listening…';
+    $('readNote').className = 'readnote idle';
     this.loop();
   },
 
@@ -1632,84 +1634,179 @@ const tuner = {
     Array.prototype.forEach.call($('strRow').children, function(el){ el.classList.remove('target'); });
   },
 
-  /* Autocorrelation over a restricted lag range, with parabolic interpolation. */
+  /* --------------------------------------------------------------
+     Pitch detection: normalised square difference (McLeod), which gives
+     a clarity score and picks the FIRST strong peak rather than the
+     tallest. Plain autocorrelation reports whichever harmonic happens to
+     correlate best, so the reading jumps an octave between frames.
+     -------------------------------------------------------------- */
   detect:function(buf, sr){
+    const N = 2048;                       /* ~46 ms: three periods of low E */
+    if (buf.length < N) return null;
+
+    let mean = 0;
+    for (let i = 0; i < N; i++) mean += buf[i];
+    mean /= N;
+
+    if (!this.work) this.work = new Float32Array(N);
+    const x = this.work;
     let rms = 0;
-    for (let i = 0; i < buf.length; i++) rms += buf[i] * buf[i];
-    rms = Math.sqrt(rms / buf.length);
-    if (rms < 0.006) return -1;                       /* too quiet to trust */
+    for (let i = 0; i < N; i++){ const v = buf[i] - mean; x[i] = v; rms += v * v; }
+    rms = Math.sqrt(rms / N);
+    if (rms < 0.010) return null;         /* room noise: say nothing at all */
 
-    const minLag = Math.floor(sr / 1400);             /* ~1400 Hz ceiling */
-    const maxLag = Math.min(Math.floor(sr / 65), Math.floor(buf.length / 2));  /* ~65 Hz floor */
-    let best = -1, bestCorr = 0, lastCorr = 1;
-    const corr = new Float32Array(maxLag + 2);
+    const minLag = Math.max(2, Math.floor(sr / 1500));
+    const maxLag = Math.min(Math.floor(sr / 60), N - 2);
+    if (!this.nsdf || this.nsdf.length < maxLag + 2) this.nsdf = new Float32Array(maxLag + 2);
+    const d = this.nsdf;
 
-    for (let lag = minLag; lag <= maxLag; lag++){
-      let sum = 0;
-      for (let i = 0; i < buf.length - lag; i++) sum += buf[i] * buf[i + lag];
-      sum = sum / (buf.length - lag);
-      corr[lag] = sum;
-      if (sum > bestCorr && sum > lastCorr){ bestCorr = sum; best = lag; }
-      lastCorr = sum;
+    for (let tau = minLag; tau <= maxLag; tau++){
+      let acf = 0, m = 0;
+      const lim = N - tau;
+      for (let i = 0; i < lim; i++){
+        const a = x[i], b = x[i + tau];
+        acf += a * b;
+        m += a * a + b * b;
+      }
+      d[tau] = m > 0 ? (2 * acf / m) : 0;
     }
-    if (best < 1) return -1;
 
-    /* refine with a parabola through the peak */
-    const x1 = corr[best-1] || 0, x2 = corr[best], x3 = corr[best+1] || 0;
-    const a = (x1 + x3 - 2 * x2) / 2, b = (x3 - x1) / 2;
-    let lag = best;
-    if (a) lag = best - b / (2 * a);
+    /* Peaks between positive-going zero crossings. */
+    let tau = minLag;
+    while (tau <= maxLag && d[tau] > 0) tau++;
+    const maxima = [];
+    let best = -1, bestVal = -1;
+    while (tau < maxLag){
+      if (d[tau] <= 0){ tau++; continue; }
+      let peak = tau;
+      while (tau < maxLag && d[tau] > 0){
+        if (d[tau] > d[peak]) peak = tau;
+        tau++;
+      }
+      maxima.push(peak);
+      if (d[peak] > bestVal){ bestVal = d[peak]; best = peak; }
+    }
+    if (best < 0 || bestVal < 0.55) return null;   /* not periodic enough */
 
-    const freq = sr / lag;
-    if (!isFinite(freq) || freq < 60 || freq > 1500) return -1;
-    return freq;
+    /* Take the earliest peak that is nearly as strong: kills octave-down errors. */
+    let chosen = best;
+    const thresh = 0.88 * bestVal;
+    for (let k = 0; k < maxima.length; k++){
+      if (d[maxima[k]] >= thresh){ chosen = maxima[k]; break; }
+    }
+
+    let t = chosen;
+    const y1 = d[chosen - 1], y2 = d[chosen], y3 = d[chosen + 1];
+    const a2 = (y1 + y3 - 2 * y2) / 2, b2 = (y3 - y1) / 2;
+    if (a2) t = chosen - b2 / (2 * a2);
+
+    const freq = sr / t;
+    if (!(freq > 55 && freq < 1600)) return null;
+    return {freq:freq, clarity:bestVal};
   },
 
   loop:function(){
     const self = this;
-    function frame(){
+    const PERIOD = 70;          /* ms between analyses; 60 fps was pure churn */
+    const HOLD   = 3;           /* consecutive agreeing frames to change note */
+    const QUIET  = 1100;        /* ms of silence before going idle */
+
+    self.hist = [];
+    self.lockNote = null;
+    self.pending = null;
+    self.pendingN = 0;
+    self.lastHeard = 0;
+    self.lastRun = 0;
+    self.centsShown = null;
+
+    function frame(now){
       if (!self.on) return;
-      self.analyser.getFloatTimeDomainData(self.buf);
-      const f = self.detect(self.buf, self.ctx.sampleRate);
-      if (f > 0){
-        /* light smoothing so the needle does not jitter */
-        self.smooth = self.smooth === null ? f : self.smooth * 0.72 + f * 0.28;
-        self.show(self.smooth);
-      }
       self.raf = requestAnimationFrame(frame);
+      if (now - self.lastRun < PERIOD) return;
+      self.lastRun = now;
+
+      self.analyser.getFloatTimeDomainData(self.buf);
+      const r = self.detect(self.buf, self.ctx.sampleRate);
+
+      if (!r){
+        if (self.lastHeard && now - self.lastHeard > QUIET) self.idle();
+        return;
+      }
+      self.lastHeard = now;
+
+      /* Median of the last five estimates: one bad frame cannot move it. */
+      self.hist.push(r.freq);
+      if (self.hist.length > 5) self.hist.shift();
+      if (self.hist.length < 3) return;
+      const sorted = self.hist.slice().sort(function(a, b){ return a - b; });
+      const freq = sorted[Math.floor(sorted.length / 2)];
+
+      const midi = freqToMidi(freq);
+      const note = Math.round(midi);
+
+      /* Only switch the displayed note once a new one has held for a few
+         frames. Cents keep updating against whatever note is locked. */
+      if (self.lockNote === null){
+        self.lockNote = note;
+      } else if (note !== self.lockNote){
+        if (self.pending === note){ self.pendingN++; } else { self.pending = note; self.pendingN = 1; }
+        if (self.pendingN >= HOLD){ self.lockNote = note; self.pending = null; self.pendingN = 0; }
+      } else {
+        self.pending = null; self.pendingN = 0;
+      }
+
+      self.show(freq, midi, self.lockNote, r.clarity);
     }
-    frame();
+    self.raf = requestAnimationFrame(frame);
   },
 
-  show:function(freq){
-    const m = freqToMidi(freq);
-    const nearest = Math.round(m);
-    const cents = Math.round((m - nearest) * 100);
-    const name = SHARPS[((nearest % 12) + 12) % 12];
-    const octave = Math.floor(nearest / 12) - 1;
+  idle:function(){
+    this.hist = [];
+    this.lockNote = null;
+    this.pending = null; this.pendingN = 0;
+    this.centsShown = null;
+    this.lastHeard = 0;
+    $('readNote').textContent = 'listening…';
+    $('readNote').className = 'readnote idle';
+    $('readOct').textContent = '';
+    $('readHz').innerHTML = '&nbsp;';
+    $('centsOut').innerHTML = '&nbsp;';
+    $('centsOut').className = 'cents';
+    $('needle').style.left = '50%';
+    $('needle').classList.remove('intune');
+    Array.prototype.forEach.call($('strRow').children, function(el){ el.classList.remove('target'); });
+  },
+
+  show:function(freq, midi, lockedNote, clarity){
+    const cents = (midi - lockedNote) * 100;
+    /* Ease the needle rather than snapping it to every reading. */
+    this.centsShown = this.centsShown === null ? cents : this.centsShown * 0.7 + cents * 0.3;
+    const shown = Math.round(this.centsShown);
+
+    const name = SHARPS[((lockedNote % 12) + 12) % 12];
+    const octave = Math.floor(lockedNote / 12) - 1;
 
     $('readNote').textContent = name;
     $('readNote').className = 'readnote';
     $('readOct').textContent = octave;
     $('readHz').textContent = freq.toFixed(1) + ' Hz';
 
-    const clamped = Math.max(-50, Math.min(50, cents));
+    const clamped = Math.max(-50, Math.min(50, this.centsShown));
     $('needle').style.left = (50 + clamped) + '%';
-    const inTune = Math.abs(cents) <= 5;
+    const inTune = Math.abs(shown) <= 5;
     $('needle').classList.toggle('intune', inTune);
     const out = $('centsOut');
     out.className = 'cents' + (inTune ? ' intune' : '');
     out.textContent = inTune ? 'in tune' :
-      (cents > 0 ? '+' + cents + ' cents · sharp' : cents + ' cents · flat');
+      (shown > 0 ? '+' + shown + ' cents · sharp' : shown + ' cents · flat');
 
-    /* highlight the closest string of the current tuning */
     let bestI = -1, bestD = 1e9;
     this.strings().forEach(function(s){
-      const d = Math.abs(m - s.midi);
-      if (d < bestD){ bestD = d; bestI = s.i; }
+      const dd = Math.abs(lockedNote - s.midi);
+      if (dd < bestD){ bestD = dd; bestI = s.i; }
     });
     Array.prototype.forEach.call($('strRow').children, function(el){
-      el.classList.toggle('target', bestD < 2.5 && +el.dataset.i === bestI);
+      el.classList.toggle('target', bestD <= 1 && +el.dataset.i === bestI);
     });
   }
 };

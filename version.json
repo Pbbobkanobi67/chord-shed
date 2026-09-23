@@ -1,7 +1,7 @@
 {
-  "apk": "/dl/chord-shed.apk",
-  "versionName": "1.9",
-  "notes": "See the release notes on GitHub for what changed.",
   "released": "2026-09-23",
-  "versionCode": 10
+  "versionName": "2.0",
+  "versionCode": 11,
+  "apk": "/dl/chord-shed.apk",
+  "notes": "See the release notes on GitHub for what changed."
 }
