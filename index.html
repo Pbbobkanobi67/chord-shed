@@ -1427,6 +1427,40 @@ const tuner = {
     diag.push('secureContext: ' + window.isSecureContext);
     diag.push('origin: ' + location.origin);
     diag.push('native: ' + (native() ? native().versionName + ' / API ' + native().sdkInt : 'web'));
+    if (window.Mic && typeof window.Mic.granted === 'function'){
+      try{ diag.push('OS mic permission: ' + (window.Mic.granted() ? 'granted' : 'NOT granted')); }
+      catch(e){ diag.push('OS mic permission: bridge threw ' + e); }
+    } else diag.push('OS mic permission: (no native bridge)');
+    /* On Android, get the OS permission BEFORE touching getUserMedia. Asking the
+       other way round means the system dialog appears while a capture request is
+       in flight, the activity pauses under it, and the grant arrives too late -
+       which shows up as NotReadableError with an empty device list. */
+    if (window.Mic && typeof window.Mic.granted === 'function'){
+      try{
+        if (!window.Mic.granted()){
+          h.className = 'hint';
+          h.textContent = 'Waiting for the microphone permission…';
+          const ok = await new Promise(function(resolve){
+            let settled = false;
+            window.__onMicPermission = function(granted){
+              if (settled) return;
+              settled = true; resolve(!!granted);
+            };
+            window.Mic.request();
+            /* If the dialog is dismissed without an answer, do not hang forever. */
+            setTimeout(function(){ if (!settled){ settled = true; resolve(window.Mic.granted()); } }, 60000);
+          });
+          if (!ok){
+            btn.disabled = false; btn.textContent = 'Start listening';
+            h.className = 'hint err';
+            h.textContent = 'Microphone permission was not granted. The reference pitches on the ' +
+              'right still work — tap a string and tune by ear.';
+            return;
+          }
+        }
+      }catch(e){ /* bridge missing or threw: fall through to getUserMedia */ }
+    }
+
     /* Neither probe below is essential, and both can hang on some WebView
        builds. Never let them stall the request itself. */
     const soon = function(p, ms, onFail){
@@ -1477,13 +1511,16 @@ const tuner = {
       {tag:'retry',       wait:600, c:{audio:true}}
     ];
     /* Last resort: name a device explicitly rather than letting the OS choose. */
-    if (inputs.length){
+    const named = inputs.filter(function(d){ return d.deviceId; });
+    if (named.length){
       attempts.push({tag:'device0', wait:300,
-                     c:{audio:{deviceId:{exact:inputs[0].deviceId}}}});
-      const comms = inputs.find(function(d){ return /comm|voice|call/i.test(d.label || ''); });
-      if (comms && comms.deviceId !== inputs[0].deviceId){
+                     c:{audio:{deviceId:{exact:named[0].deviceId}}}});
+      const comms = named.find(function(d){ return /comm|voice|call/i.test(d.label || ''); });
+      if (comms && comms.deviceId !== named[0].deviceId){
         attempts.push({tag:'voice', wait:300, c:{audio:{deviceId:{exact:comms.deviceId}}}});
       }
+    } else if (inputs.length){
+      diag.push('note: device ids are blank, which means capture permission is not in effect');
     }
 
     const failures = [];

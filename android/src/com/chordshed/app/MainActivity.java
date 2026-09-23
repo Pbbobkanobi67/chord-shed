@@ -14,6 +14,7 @@ import android.os.Bundle;
 import android.view.View;
 import android.view.ViewGroup;
 import android.webkit.DownloadListener;
+import android.webkit.JavascriptInterface;
 import android.webkit.PermissionRequest;
 import android.webkit.WebChromeClient;
 import android.webkit.WebResourceRequest;
@@ -63,8 +64,9 @@ public class MainActivity extends Activity {
     private WebView web;
     private boolean loaded = false;
 
-    /** A WebView mic request parked while Android's own permission dialog is up. */
-    private PermissionRequest pendingMic;
+    /** True while Android's own permission dialog is up, so onPause does not
+        tear down the WebView underneath it. */
+    private boolean awaitingMic = false;
 
     @Override
     protected void onCreate(Bundle saved) {
@@ -136,18 +138,22 @@ public class MainActivity extends Activity {
                         if (hasMicPermission()) {
                             request.grant(new String[]{PermissionRequest.RESOURCE_AUDIO_CAPTURE});
                         } else {
-                            pendingMic = request;
+                            // Do NOT park the request across the OS dialog. That dialog pauses
+                            // the activity, the in-flight capture is torn down, and granting
+                            // afterwards yields NotReadableError with an empty device list.
+                            // Deny cleanly; the page asks for the OS permission up front via
+                            // Mic.request() and then retries.
+                            request.deny();
+                            awaitingMic = true;
                             requestPermissions(new String[]{Manifest.permission.RECORD_AUDIO}, REQ_MIC);
                         }
                     }
                 });
             }
 
-            @Override
-            public void onPermissionRequestCanceled(PermissionRequest request) {
-                if (pendingMic == request) pendingMic = null;
-            }
         });
+
+        web.addJavascriptInterface(new MicBridge(), "Mic");
 
         setContentView(web, new ViewGroup.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
@@ -195,7 +201,8 @@ public class MainActivity extends Activity {
                 + "packageName:" + quote(getPackageName()) + ","
                 + "sdkInt:" + Build.VERSION.SDK_INT + ","
                 + "release:" + quote(Build.VERSION.RELEASE) + ","
-                + "installedOn:" + quote(installedOn)
+                + "installedOn:" + quote(installedOn) + ","
+                + "micGranted:" + hasMicPermission()
                 + "}; if (window.__onNative) window.__onNative();";
         web.evaluateJavascript(js, null);
     }
@@ -270,18 +277,50 @@ public class MainActivity extends Activity {
     public void onRequestPermissionsResult(int code, String[] perms, int[] results) {
         if (code == REQ_MIC) {
             boolean granted = results.length > 0 && results[0] == PackageManager.PERMISSION_GRANTED;
-            if (pendingMic != null) {
-                if (granted) {
-                    pendingMic.grant(new String[]{PermissionRequest.RESOURCE_AUDIO_CAPTURE});
-                } else {
-                    // The page handles the refusal: it falls back to reference pitches.
-                    pendingMic.deny();
-                }
-                pendingMic = null;
-            }
+            awaitingMic = false;
+            notifyMicResult(granted);
             return;
         }
         super.onRequestPermissionsResult(code, perms, results);
+    }
+
+    /** Tells the page the OS answered, so it can go ahead and call getUserMedia. */
+    private void notifyMicResult(final boolean granted) {
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                if (web == null) return;
+                web.evaluateJavascript(
+                        "window.__onMicPermission && window.__onMicPermission(" + granted + ");", null);
+            }
+        });
+    }
+
+    /**
+     * Exposed to the page as Mic.*. The page uses this to obtain the OS permission
+     * BEFORE calling getUserMedia, so the WebView's own permission request can be
+     * granted synchronously and nothing is in flight while the dialog is up.
+     */
+    private class MicBridge {
+        @JavascriptInterface
+        public boolean granted() {
+            return hasMicPermission();
+        }
+
+        @JavascriptInterface
+        public void request() {
+            runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    if (hasMicPermission()) {
+                        notifyMicResult(true);
+                        return;
+                    }
+                    awaitingMic = true;
+                    requestPermissions(new String[]{Manifest.permission.RECORD_AUDIO}, REQ_MIC);
+                }
+            });
+        }
     }
 
     private boolean isNight() {
@@ -338,6 +377,9 @@ public class MainActivity extends Activity {
     @Override
     protected void onPause() {
         super.onPause();
+        // The permission dialog pauses us too. Pausing the WebView under it is
+        // what broke the in-flight capture request.
+        if (awaitingMic) return;
         web.onPause();
         web.pauseTimers();   // silence any scheduled strum while backgrounded
     }
@@ -348,6 +390,7 @@ public class MainActivity extends Activity {
         web.resumeTimers();
         web.onResume();
         applyTheme();
+        if (loaded) injectBuildInfo();   // refresh micGranted after the dialog
     }
 
     @Override
