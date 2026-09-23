@@ -15,8 +15,8 @@ foreach ($p in $AAPT, $D8, $ALIGN, $SIGN, $JAR) {
 }
 
 # versionCode must strictly increase or Android refuses the update.
-$VERSION_CODE = 5
-$VERSION_NAME = '1.4'
+$VERSION_CODE = 6
+$VERSION_NAME = '1.5'
 $OUT = 'out'
 
 if (Test-Path $OUT) { Remove-Item $OUT -Recurse -Force }
@@ -26,6 +26,12 @@ New-Item -ItemType Directory -Force -Path "$OUT\flat","$OUT\gen","$OUT\classes",
 Write-Host '-> mkhtml (bundle offline page)' -ForegroundColor Cyan
 & python mkhtml.py
 if ($LASTEXITCODE -ne 0) { throw 'mkhtml.py failed' }
+
+# 0b. A syntax error in the page's one inline script fails silently: the browser
+#     renders the static HTML and runs nothing, so every button is dead. Catch it here.
+Write-Host '-> syntax check' -ForegroundColor Cyan
+& python ..\check.py ..\index.html assets\index.html
+if ($LASTEXITCODE -ne 0) { throw 'inline script failed syntax check' }
 
 function Run($exe, $argList, $what) {
   Write-Host "-> $what" -ForegroundColor Cyan
@@ -134,3 +140,14 @@ $size = (Get-Item "$OUT\chord-shed.apk").Length
 Write-Host ''
 Write-Host ("BUILT  out\chord-shed.apk  ({0:N0} KB)" -f ($size/1KB)) -ForegroundColor Green
 
+# 9. publish the version the site's update check reads
+$stamp = Get-Date -Format 'yyyy-MM-dd'
+$verJson = @{
+  versionName = $VERSION_NAME
+  versionCode = $VERSION_CODE
+  apk         = '/dl/chord-shed.apk'
+  released    = $stamp
+  notes       = 'See the release notes on GitHub for what changed.'
+} | ConvertTo-Json
+Set-Content -Path '../version.json' -Value $verJson -Encoding UTF8
+Write-Host "-> wrote version.json ($VERSION_NAME / $VERSION_CODE)" -ForegroundColor Cyan

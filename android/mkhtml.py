@@ -53,7 +53,9 @@ assert 'fonts.googleapis' not in out, 'network font link still present'
 assert out.count('<title>%s</title>' % title) == 1, 'document title duplicated'
 assert '</script>' in out and 'Karplus' in out, 'app script missing'
 assert 'data-web-only' not in out, 'a web-only element survived stripping'
-for leak in ('dl/chord-shed.apk', 'releases/latest', 'github.com'):
-    assert leak not in out, 'download link leaked into the APK: %s' % leak
+# The footer's "Android app" button is circular inside the app and must go.
+# Outbound URLs in general are fine now: Options > Check for updates uses them.
+assert 'class="getapp"' not in out, 'the footer download button leaked into the APK'
+assert 'getappwrap" data-web-only' not in out, 'the web-only wrapper survived'
 print('assets/index.html written: %d bytes -- checks ok '
       '(stripped %d web-only element(s), %d comment(s))' % (len(out), n_element, n_comment))

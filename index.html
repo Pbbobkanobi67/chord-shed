@@ -251,6 +251,29 @@ input[type=range]{flex:1 1 150px; min-width:120px; accent-color:var(--accent)}
 .progitem .mini:hover{color:var(--ink); border-color:var(--line-2)}
 .progempty{display:flex; align-items:center; color:var(--ink-3); font-size:13px; font-style:italic}
 
+/* ---------- options ---------- */
+.optgrid{display:grid; grid-template-columns:repeat(auto-fit,minmax(min(100%,290px),1fr)); gap:22px; align-items:start}
+.rows{display:flex; flex-direction:column; gap:0; margin-top:4px}
+.row2{display:flex; align-items:baseline; justify-content:space-between; gap:14px;
+  padding:9px 0; border-bottom:1px solid var(--line)}
+.row2:last-child{border-bottom:0}
+.row2 dt{font:500 12.5px/1.3 "IBM Plex Sans",sans-serif; color:var(--ink-2); margin:0; flex:0 0 auto}
+.row2 dd{margin:0; font:400 12px/1.4 "IBM Plex Mono",monospace; color:var(--ink-3);
+  text-align:right; word-break:break-word; min-width:0}
+.row2 dd.strong{color:var(--ink); font-weight:500}
+.pill{display:inline-block; font:500 10.5px/1 "IBM Plex Mono",monospace; letter-spacing:.06em;
+  padding:5px 8px; border-radius:6px; background:var(--accent-soft); color:var(--accent-ink)}
+.pill.warn{background:var(--ochre-soft); color:var(--ochre)}
+.updbox{margin-top:12px; padding:12px; border:1px solid var(--line); border-radius:10px; background:var(--paper)}
+.updbox.new{border-color:var(--accent); background:var(--accent-soft)}
+.updtitle{font:600 14px/1.3 "IBM Plex Sans",sans-serif; margin:0 0 4px}
+.linkrow{display:flex; flex-direction:column; gap:2px; margin-top:4px}
+.linkrow a{color:var(--accent-ink); font-size:13px; text-decoration:none; padding:7px 0;
+  border-bottom:1px solid var(--line)}
+.linkrow a:last-child{border-bottom:0}
+.linkrow a:hover{text-decoration:underline}
+.danger{border-color:var(--err) !important; color:var(--err) !important}
+
 /* ---------- footer ---------- */
 footer{margin-top:28px; padding-top:16px; border-top:1px solid var(--line);
   font:400 12px/1.6 "IBM Plex Sans",sans-serif; color:var(--ink-3); display:flex; gap:16px 20px;
@@ -328,6 +351,11 @@ footer .colophon{flex:1 1 320px; display:flex; flex-direction:column; gap:2px}
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
         <path d="M5 4h14v16H5z"/><path d="M8.5 8.5h7"/><path d="M8.5 12h7"/><path d="M8.5 15.5h4"/>
       </svg>Charts</button>
+    <button type="button" role="tab" data-view="options" aria-selected="false">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <circle cx="12" cy="12" r="3.1"/>
+        <path d="M12 3.5v2M12 18.5v2M3.5 12h2M18.5 12h2M6 6l1.4 1.4M16.6 16.6L18 18M18 6l-1.4 1.4M7.4 16.6L6 18"/>
+      </svg>Options</button>
   </nav>
 
   <!-- ============ CHORDS ============ -->
@@ -497,6 +525,49 @@ footer .colophon{flex:1 1 320px; display:flex; flex-direction:column; gap:2px}
         <div class="prog" id="prog"></div>
         <p class="hint" style="margin:12px 0 0">
           Add chords from the Chords tab. Tap a chord here to load its shape; use ‹ › to reorder.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ OPTIONS ============ -->
+  <section class="view" id="view-options" hidden>
+    <div class="optgrid">
+      <div class="card" style="padding:16px">
+        <div class="sechead" style="margin-bottom:6px">
+          <h2>This build</h2>
+          <span class="pill" id="buildKind">—</span>
+        </div>
+        <dl class="rows" id="buildRows"></dl>
+      </div>
+
+      <div class="card" style="padding:16px">
+        <div class="sechead" style="margin-bottom:6px"><h2>Updates</h2></div>
+        <div class="acts">
+          <button type="button" class="btn primary" id="checkUpd">Check for updates</button>
+        </div>
+        <div class="updbox" id="updBox">
+          <p class="updtitle" id="updTitle">Not checked yet</p>
+          <p class="hint" id="updBody" style="margin:0">
+            Chord Shed does not check on its own — it only looks when you press the button.
+          </p>
+        </div>
+        <p class="hint" id="updNet" style="margin:10px 0 0"></p>
+      </div>
+
+      <div class="card" style="padding:16px">
+        <div class="sechead" style="margin-bottom:6px"><h2>About &amp; data</h2></div>
+        <div class="linkrow">
+          <a id="lnkSite" href="https://chord-shed.vercel.app">Open the web version</a>
+          <a id="lnkRepo" href="https://github.com/Pbbobkanobi67/chord-shed">Source on GitHub</a>
+          <a id="lnkRel" href="https://github.com/Pbbobkanobi67/chord-shed/releases">All releases &amp; notes</a>
+        </div>
+        <dl class="rows" id="dataRows" style="margin-top:10px"></dl>
+        <div class="acts" style="margin-top:12px">
+          <button type="button" class="btn danger" id="resetData">Reset saved data</button>
+        </div>
+        <p class="hint" style="margin:10px 0 0">
+          Clears your charts, tuning and preferences on this device. Nothing leaves the device either way.
         </p>
       </div>
     </div>
@@ -1511,13 +1582,120 @@ function parseChord(text){
 }
 
 /* =====================================================================
+   Options: build info and update check
+   ===================================================================== */
+const WEB_VERSION = '1.5';                 /* bumped with each release */
+const VERSION_URL = 'https://chord-shed.vercel.app/version.json';
+const SITE_URL    = 'https://chord-shed.vercel.app';
+
+/* MainActivity fills this in after the page loads, then calls __onNative. */
+function native(){ return window.__CHORDSHED_NATIVE__ || null; }
+
+function bytesUsed(){
+  try{
+    const raw = localStorage.getItem('chordshed');
+    return raw ? raw.length : 0;
+  }catch(e){ return -1; }
+}
+
+function renderOptions(){
+  const n = native();
+  const kind = $('buildKind');
+  kind.textContent = n ? 'ANDROID APP' : 'WEB';
+  kind.className = 'pill';
+
+  const rows = [];
+  if (n){
+    rows.push(['Version', (n.versionName || '?') + ' (build ' + (n.versionCode || '?') + ')', true]);
+    rows.push(['Package', n.packageName || 'com.chordshed.app', false]);
+    rows.push(['Android', n.release ? n.release + ' (API ' + n.sdkInt + ')' : 'API ' + n.sdkInt, false]);
+    if (n.installedOn) rows.push(['Installed', n.installedOn, false]);
+    rows.push(['Signature', n.signer ? n.signer.slice(0, 16) + '…' : 'local key', false]);
+    rows.push(['Runs offline', 'yes — page and fonts are bundled', false]);
+  } else {
+    rows.push(['Version', WEB_VERSION, true]);
+    rows.push(['Running as', 'web page', false]);
+    rows.push(['Updates', 'automatic — just reload', false]);
+  }
+  $('buildRows').innerHTML = rows.map(function(r){
+    return '<div class="row2"><dt>' + r[0] + '</dt><dd class="' + (r[2] ? 'strong' : '') + '">' +
+           escapeHtml(r[1]) + '</dd></div>';
+  }).join('');
+
+  const b = bytesUsed();
+  const c = state.charts.length;
+  const chords = state.charts.reduce(function(a, x){ return a + x.chords.length; }, 0);
+  $('dataRows').innerHTML =
+    '<div class="row2"><dt>Saved charts</dt><dd>' + c + ' (' + chords + ' chords)</dd></div>' +
+    '<div class="row2"><dt>Stored on device</dt><dd>' +
+      (b < 0 ? 'unavailable' : (b / 1024).toFixed(1) + ' KB') + '</dd></div>';
+
+  $('updNet').textContent = n
+    ? 'Checking contacts chord-shed.vercel.app once, for a small version file. That is the only network request the app can make.'
+    : '';
+  if (!n){
+    $('updTitle').textContent = 'You are on the web version';
+    $('updBody').textContent = 'The web version updates itself — a reload always gets the latest. ' +
+      'Use this to see the newest Android release.';
+  }
+}
+
+function cmpVersion(remoteCode, localCode){
+  if (typeof remoteCode !== 'number' || typeof localCode !== 'number') return 0;
+  return remoteCode - localCode;
+}
+
+async function checkUpdates(){
+  const btn = $('checkUpd'), box = $('updBox'), title = $('updTitle'), body = $('updBody');
+  const n = native();
+  btn.disabled = true; btn.textContent = 'Checking…';
+  box.className = 'updbox';
+  try{
+    const res = await fetch(VERSION_URL + '?t=' + Date.now(), {cache:'no-store'});
+    if (!res.ok) throw new Error('server returned ' + res.status);
+    const j = await res.json();
+
+    const latest = j.versionName || '?';
+    if (!n){
+      title.textContent = 'Latest Android release: ' + latest;
+      body.innerHTML = 'You are on the web version, which is always current. ' +
+        '<a href="' + SITE_URL + '/dl/chord-shed.apk" download>Download the Android app</a>.';
+      box.className = 'updbox';
+    } else if (cmpVersion(j.versionCode, n.versionCode) > 0){
+      box.className = 'updbox new';
+      title.textContent = 'Update available — ' + latest;
+      body.innerHTML = escapeHtml(j.notes || 'A newer build is available.') +
+        '<br><br><a href="' + SITE_URL + (j.apk || '/dl/chord-shed.apk') + '" download>' +
+        'Download ' + escapeHtml(latest) + '</a> — it opens in your browser, then tap the file to install. ' +
+        'It installs over this one and keeps your charts.';
+    } else {
+      title.textContent = 'Up to date';
+      body.textContent = 'You are on ' + (n.versionName || '?') +
+        ', which is the newest release (' + latest + ').';
+    }
+  }catch(e){
+    box.className = 'updbox';
+    title.textContent = 'Could not check';
+    body.textContent = (e && e.message ? e.message : String(e)) +
+      '. Check your connection, or open the releases page above.';
+  }
+  btn.disabled = false; btn.textContent = 'Check for updates';
+}
+
+/* Android calls this once it has injected __CHORDSHED_NATIVE__. */
+window.__onNative = function(){
+  try{ renderOptions(); }catch(e){}
+};
+
+/* =====================================================================
    Views
    ===================================================================== */
 function showView(name){
   state.view = name;
-  ['chords','tuner','practice','charts'].forEach(function(v){
+  ['chords','tuner','practice','charts','options'].forEach(function(v){
     $('view-' + v).hidden = (v !== name);
   });
+  if (name === 'options') renderOptions();
   Array.prototype.forEach.call($('tabs').children, function(b){
     b.setAttribute('aria-selected', String(b.dataset.view === name));
   });
@@ -1777,6 +1955,15 @@ function init(){
     if (!seq.on) seq.start();
     save();
   });
+
+  /* --- options --- */
+  $('checkUpd').addEventListener('click', checkUpdates);
+  $('resetData').addEventListener('click', function(){
+    if (!confirm('Reset every chart, tuning and preference on this device? This cannot be undone.')) return;
+    try{ localStorage.removeItem('chordshed'); }catch(e){}
+    location.reload();
+  });
+  renderOptions();
 
   /* --- keyboard --- */
   document.addEventListener('keydown', function(e){

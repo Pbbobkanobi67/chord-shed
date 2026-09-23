@@ -64,11 +64,21 @@ cd android
 Output: `android/out/chord-shed.apk`. Package `com.chordshed.app`, minSdk 26 (Android 8.0),
 targetSdk 34, ~530 KB.
 
-The APK declares exactly one permission, `RECORD_AUDIO`, which the tuner uses to hear the string you
-play. Audio is analysed in the page and discarded — nothing is recorded, stored or transmitted, and
-there is **no `INTERNET` permission** for it to be transmitted over. Refusing the mic costs you only
-the listening tuner; reference pitches still work. The page and its three typefaces ship inside the
-package, so the app works in airplane mode.
+The APK declares two permissions:
+
+- **`RECORD_AUDIO`** — the tuner, to hear the string you play. Audio is analysed in the page and
+  discarded; nothing is recorded or stored. Refusing it costs you only the listening tuner, since
+  reference pitches still work.
+- **`INTERNET`** (plus `ACCESS_NETWORK_STATE`) — *only* Options → Check for updates, which fetches
+  `version.json` when you press the button. The app never loads its own pages over the network.
+
+The page and its three typefaces ship inside the package, so everything except the update check
+works in airplane mode.
+
+The app's pages are served over `https://appassets.androidplatform.net/` — a reserved hostname that
+does not resolve — via `shouldInterceptRequest`, rather than `file:///android_asset/`. `getUserMedia()`
+requires a secure context, and `file://` is not one: on `file://` the WebView shows the microphone
+prompt, accepts the grant, and then still refuses to open the mic.
 
 A WebView needs the grant twice over: `WebChromeClient.onPermissionRequest` must call `grant()`
 *and* the OS permission must be held. `MainActivity` bridges the two — without that bridge

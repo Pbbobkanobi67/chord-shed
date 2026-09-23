@@ -2,6 +2,9 @@ package com.chordshed.app;
 
 import android.Manifest;
 import android.app.Activity;
+import android.content.ActivityNotFoundException;
+import android.content.Intent;
+import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.content.res.Configuration;
 import android.graphics.Color;
@@ -10,6 +13,7 @@ import android.os.Build;
 import android.os.Bundle;
 import android.view.View;
 import android.view.ViewGroup;
+import android.webkit.DownloadListener;
 import android.webkit.PermissionRequest;
 import android.webkit.WebChromeClient;
 import android.webkit.WebResourceRequest;
@@ -20,17 +24,21 @@ import android.webkit.WebViewClient;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.text.DateFormat;
 import java.util.Collections;
+import java.util.Date;
 import java.util.Map;
 
 /**
  * Chord Shed runs as a single offline page in a WebView. The page ships in
  * assets/ along with its fonts, so the app never touches the network.
  *
- * The only permission the app declares is RECORD_AUDIO, used by the tuner to
- * detect the pitch of the string you play. Audio is analysed in the page and
- * discarded - nothing is recorded, stored or transmitted, and there is no
- * INTERNET permission for it to be transmitted over.
+ * Permissions:
+ *  - RECORD_AUDIO, used by the tuner to detect the pitch of the string you play.
+ *    Audio is analysed in the page and discarded; nothing is recorded or stored.
+ *  - INTERNET, used by Options > Check for updates, which fetches one small
+ *    version file when the button is pressed. The app's own pages are never
+ *    loaded over the network - they are served from inside the APK.
  */
 public class MainActivity extends Activity {
 
@@ -81,11 +89,31 @@ public class MainActivity extends Activity {
             public void onPageFinished(WebView v, String url) {
                 loaded = true;
                 applyTheme();
+                injectBuildInfo();
             }
 
             @Override
             public WebResourceResponse shouldInterceptRequest(WebView v, WebResourceRequest req) {
                 return serveAsset(req.getUrl());
+            }
+
+            // Anything that is not one of our own asset pages (the update download,
+            // the GitHub and website links) goes to a real browser. A WebView cannot
+            // download an APK, and handing it one just shows a blank page.
+            @Override
+            public boolean shouldOverrideUrlLoading(WebView v, WebResourceRequest req) {
+                Uri u = req.getUrl();
+                if (u != null && ASSET_HOST.equals(u.getHost())) return false;
+                return openExternally(u);
+            }
+        });
+
+        // Same for anything the page treats as a download.
+        web.setDownloadListener(new DownloadListener() {
+            @Override
+            public void onDownloadStart(String url, String ua, String disposition,
+                                        String mime, long length) {
+                openExternally(Uri.parse(url));
             }
         });
 
@@ -131,10 +159,64 @@ public class MainActivity extends Activity {
         }
     }
 
+    /** Hands a link to the system browser. Returns true if we consumed it. */
+    private boolean openExternally(Uri u) {
+        if (u == null) return false;
+        try {
+            Intent i = new Intent(Intent.ACTION_VIEW, u);
+            i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+            startActivity(i);
+            return true;
+        } catch (ActivityNotFoundException e) {
+            return false;
+        }
+    }
+
+    /**
+     * Tells the page what build it is running inside, so Options can show real
+     * version info and compare it against the published one.
+     */
+    private void injectBuildInfo() {
+        String versionName = "?";
+        int versionCode = 0;
+        String installedOn = "";
+        try {
+            PackageInfo pi = getPackageManager().getPackageInfo(getPackageName(), 0);
+            versionName = pi.versionName != null ? pi.versionName : "?";
+            versionCode = (int) (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P
+                    ? pi.getLongVersionCode() : pi.versionCode);
+            installedOn = DateFormat.getDateInstance().format(new Date(pi.lastUpdateTime));
+        } catch (PackageManager.NameNotFoundException ignored) {
+        }
+
+        String js = "window.__CHORDSHED_NATIVE__ = {"
+                + "versionName:" + quote(versionName) + ","
+                + "versionCode:" + versionCode + ","
+                + "packageName:" + quote(getPackageName()) + ","
+                + "sdkInt:" + Build.VERSION.SDK_INT + ","
+                + "release:" + quote(Build.VERSION.RELEASE) + ","
+                + "installedOn:" + quote(installedOn)
+                + "}; if (window.__onNative) window.__onNative();";
+        web.evaluateJavascript(js, null);
+    }
+
+    /** Minimal JS string literal - these values are all from the platform, but quote anyway. */
+    private static String quote(String s) {
+        if (s == null) return "''";
+        StringBuilder b = new StringBuilder("'");
+        for (int i = 0; i < s.length(); i++) {
+            char c = s.charAt(i);
+            if (c == '\'' || c == '\\') b.append('\\').append(c);
+            else if (c == '\n' || c == '\r') b.append(' ');
+            else b.append(c);
+        }
+        return b.append('\'').toString();
+    }
+
     /**
      * Answers every request for the asset host from the APK, so nothing is ever
      * fetched over the network. Returns null for anything else, which lets the
-     * WebView handle it normally (and there is nothing else to handle).
+     * WebView handle it normally (the update check and outbound links).
      */
     private WebResourceResponse serveAsset(Uri uri) {
         if (uri == null || !ASSET_HOST.equals(uri.getHost())) return null;
