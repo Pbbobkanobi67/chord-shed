@@ -1410,43 +1410,74 @@ const tuner = {
       return;
     }
 
-    try{
-      this.stream = await navigator.mediaDevices.getUserMedia({
-        audio:{echoCancellation:false, noiseSuppression:false, autoGainControl:false}
-      });
-    }catch(e){
+    /* Android refuses a raw capture path (echoCancellation/noiseSuppression off)
+       on plenty of devices, especially while audio output is active, and reports
+       it as NotReadableError. Ask for the clean signal first, then settle for
+       whatever the device will actually give us. */
+    const attempts = [
+      {tag:'unprocessed', wait:0,   c:{audio:{echoCancellation:false, noiseSuppression:false, autoGainControl:false}}},
+      {tag:'default',     wait:0,   c:{audio:true}},
+      /* NotReadableError is often transient while another capture is torn down. */
+      {tag:'retry',       wait:600, c:{audio:true}}
+    ];
+    const failures = [];
+    let stream = null;
+    for (const a of attempts){
+      if (a.wait) await new Promise(function(r){ setTimeout(r, a.wait); });
+      try{
+        stream = await navigator.mediaDevices.getUserMedia(a.c);
+        this.captureMode = a.tag;
+        break;
+      }catch(e){
+        const nm = (e && e.name) ? e.name : 'Error';
+        failures.push(a.tag + ' → ' + nm);
+        /* A refusal is about permission, not constraints; retrying cannot help. */
+        if (nm === 'NotAllowedError' || nm === 'SecurityError') break;
+      }
+    }
+
+    if (!stream){
       btn.disabled = false; btn.textContent = 'Start listening';
       h.className = 'hint err';
-      const name = (e && e.name) ? e.name : 'Error';
-      const msg  = (e && e.message) ? e.message : '';
-      if (name === 'NotAllowedError'){
+      const first = failures.length ? failures[failures.length - 1].split(' → ')[1] : 'Error';
+      if (first === 'NotAllowedError' || first === 'SecurityError'){
         h.textContent = 'Microphone access was refused. The reference pitches on the right still work — ' +
           'tap a string and tune by ear.';
-      } else if (name === 'NotFoundError' || name === 'OverconstrainedError'){
-        h.textContent = 'No microphone was found on this device. Reference pitches still work. [' + name + ']';
-      } else if (name === 'NotReadableError'){
-        h.textContent = 'The microphone is busy — another app may be holding it. Close it and try again. [' +
-          name + ']';
+      } else if (first === 'NotFoundError'){
+        h.textContent = 'No microphone was found on this device. Reference pitches still work. [' + first + ']';
+      } else if (first === 'NotReadableError'){
+        h.textContent = 'Another app is holding the microphone — a call, a voice assistant or a ' +
+          'recorder. Close it, then try again. (Tried: ' + failures.join(', ') + ')';
       } else {
-        /* Say what actually broke rather than guessing; this is what gets reported back. */
-        h.textContent = 'Could not open the microphone — ' + name + (msg ? ': ' + msg : '') +
-          '. Reference pitches on the right still work.';
+        h.textContent = 'Could not open the microphone. (Tried: ' + failures.join(', ') + ') ' +
+          'Reference pitches on the right still work.';
       }
       return;
     }
-    const AC = window.AudioContext || window.webkitAudioContext;
-    this.ctx = new AC();
-    if (this.ctx.state === 'suspended') await this.ctx.resume();
-    const src = this.ctx.createMediaStreamSource(this.stream);
-    this.analyser = this.ctx.createAnalyser();
+    this.stream = stream;
+
+    /* Share the one AudioContext with playback. A second context competing for
+       the same device is itself a common source of NotReadableError on Android. */
+    const ctx = audio.resume();
+    if (!ctx){
+      this.stop();
+      h.className = 'hint err';
+      h.textContent = 'No Web Audio support in this browser.';
+      btn.disabled = false; btn.textContent = 'Start listening';
+      return;
+    }
+    this.ctx = ctx;
+    this.src = ctx.createMediaStreamSource(this.stream);
+    this.analyser = ctx.createAnalyser();
     this.analyser.fftSize = 4096;
-    src.connect(this.analyser);
+    this.src.connect(this.analyser);        /* analyser only - never back to output */
     this.buf = new Float32Array(this.analyser.fftSize);
     this.on = true; this.smooth = null;
     btn.disabled = false; btn.textContent = 'Stop listening';
     btn.classList.remove('primary');
     h.className = 'hint';
-    h.textContent = 'Play one string at a time. Nothing is recorded or sent anywhere.';
+    h.textContent = 'Play one string at a time. Nothing is recorded or sent anywhere.' +
+      (this.captureMode === 'default' ? ' (Using the device’s processed input.)' : '');
     this.loop();
   },
 
@@ -1454,8 +1485,11 @@ const tuner = {
     this.on = false;
     if (this.raf) cancelAnimationFrame(this.raf);
     this.raf = null;
+    if (this.src){ try{ this.src.disconnect(); }catch(e){} this.src = null; }
     if (this.stream){ this.stream.getTracks().forEach(function(t){ t.stop(); }); this.stream = null; }
-    if (this.ctx){ this.ctx.close(); this.ctx = null; }
+    /* The context is shared with playback now - release the mic, keep the context. */
+    this.ctx = null;
+    this.analyser = null;
     const btn = $('listenBtn');
     btn.textContent = 'Start listening'; btn.classList.add('primary'); btn.disabled = false;
     $('readNote').textContent = 'not listening';
