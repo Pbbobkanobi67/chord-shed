@@ -1374,7 +1374,6 @@ const tuner = {
     this.on = true; this.smooth = null;
     btn.disabled = false; btn.textContent = 'Stop listening';
     btn.classList.remove('primary');
-    const h = $('tunerHint');
     h.className = 'hint';
     h.textContent = 'Play one string at a time. Nothing is recorded or sent anywhere.';
     this.loop();
