@@ -15,8 +15,8 @@ foreach ($p in $AAPT, $D8, $ALIGN, $SIGN, $JAR) {
 }
 
 # versionCode must strictly increase or Android refuses the update.
-$VERSION_CODE = 7
-$VERSION_NAME = '1.6'
+$VERSION_CODE = 8
+$VERSION_NAME = '1.7'
 $OUT = 'out'
 
 if (Test-Path $OUT) { Remove-Item $OUT -Recurse -Force }
@@ -151,3 +151,4 @@ $verJson = @{
 } | ConvertTo-Json
 Set-Content -Path '../version.json' -Value $verJson -Encoding UTF8
 Write-Host "-> wrote version.json ($VERSION_NAME / $VERSION_CODE)" -ForegroundColor Cyan
+

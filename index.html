@@ -273,6 +273,10 @@ input[type=range]{flex:1 1 150px; min-width:120px; accent-color:var(--accent)}
 .linkrow a:last-child{border-bottom:0}
 .linkrow a:hover{text-decoration:underline}
 .danger{border-color:var(--err) !important; color:var(--err) !important}
+.diag{margin:8px 0 0; padding:10px; border:1px solid var(--line); border-radius:8px;
+  background:var(--paper); color:var(--ink-2); font:400 11px/1.5 "IBM Plex Mono",monospace;
+  white-space:pre-wrap; word-break:break-word; max-height:260px; overflow:auto;
+  -webkit-user-select:text; user-select:text}
 
 /* ---------- footer ---------- */
 footer{margin-top:28px; padding-top:16px; border-top:1px solid var(--line);
@@ -452,6 +456,13 @@ footer .colophon{flex:1 1 320px; display:flex; flex-direction:column; gap:2px}
           Uses the microphone to detect pitch. Nothing is recorded or sent anywhere — audio is analysed
           in the page and discarded.
         </p>
+        <details id="micDiagWrap" hidden style="margin-top:10px">
+          <summary class="hint" style="cursor:pointer">Microphone details</summary>
+          <pre id="micDiag" class="diag"></pre>
+          <div class="acts" style="margin-top:8px">
+            <button type="button" class="btn sm" id="copyDiag">Copy details</button>
+          </div>
+        </details>
       </div>
 
       <div class="card" style="padding:16px">
@@ -1410,6 +1421,51 @@ const tuner = {
       return;
     }
 
+    /* Collect facts before guessing: what the browser thinks it can do, what the
+       permission layer says, and what devices exist. Shown on failure. */
+    const diag = [];
+    diag.push('secureContext: ' + window.isSecureContext);
+    diag.push('origin: ' + location.origin);
+    diag.push('native: ' + (native() ? native().versionName + ' / API ' + native().sdkInt : 'web'));
+    /* Neither probe below is essential, and both can hang on some WebView
+       builds. Never let them stall the request itself. */
+    const soon = function(p, ms, onFail){
+      return Promise.race([
+        Promise.resolve(p).then(function(v){ return v; },
+                                function(e){ return onFail(e); }),
+        new Promise(function(r){ setTimeout(function(){ r('(timed out)'); }, ms); })
+      ]);
+    };
+
+    if (navigator.permissions && navigator.permissions.query){
+      const st = await soon(navigator.permissions.query({name:'microphone'}), 1500,
+        function(e){ return 'query failed — ' + (e && e.name ? e.name : e); });
+      diag.push('permission: ' + (st && st.state ? st.state : st));
+    } else diag.push('permission: (Permissions API unavailable)');
+
+    let inputs = [];
+    const devs = await soon(navigator.mediaDevices.enumerateDevices(), 1500,
+      function(e){ return 'enumerate failed — ' + (e && e.name ? e.name : e); });
+    if (Array.isArray(devs)){
+      inputs = devs.filter(function(d){ return d.kind === 'audioinput'; });
+      diag.push('audio inputs: ' + inputs.length);
+      inputs.forEach(function(d, i){
+        diag.push('  [' + i + '] ' + (d.label || '(label hidden)') +
+                  ' id=' + String(d.deviceId).slice(0, 8));
+      });
+    } else diag.push('audio inputs: ' + devs);
+
+    /* If playback is live, some Android devices refuse to open a capture stream.
+       Park the output while we ask, then bring it back. */
+    let wasRunning = false;
+    if (audio.ctx && audio.ctx.state === 'running'){
+      wasRunning = true;
+      diag.push('playback context: running — suspending while asking');
+      try{ await audio.ctx.suspend(); }catch(e){ diag.push('suspend failed: ' + e); }
+    } else {
+      diag.push('playback context: ' + (audio.ctx ? audio.ctx.state : 'not created'));
+    }
+
     /* Android refuses a raw capture path (echoCancellation/noiseSuppression off)
        on plenty of devices, especially while audio output is active, and reports
        it as NotReadableError. Ask for the clean signal first, then settle for
@@ -1420,6 +1476,16 @@ const tuner = {
       /* NotReadableError is often transient while another capture is torn down. */
       {tag:'retry',       wait:600, c:{audio:true}}
     ];
+    /* Last resort: name a device explicitly rather than letting the OS choose. */
+    if (inputs.length){
+      attempts.push({tag:'device0', wait:300,
+                     c:{audio:{deviceId:{exact:inputs[0].deviceId}}}});
+      const comms = inputs.find(function(d){ return /comm|voice|call/i.test(d.label || ''); });
+      if (comms && comms.deviceId !== inputs[0].deviceId){
+        attempts.push({tag:'voice', wait:300, c:{audio:{deviceId:{exact:comms.deviceId}}}});
+      }
+    }
+
     const failures = [];
     let stream = null;
     for (const a of attempts){
@@ -1427,14 +1493,22 @@ const tuner = {
       try{
         stream = await navigator.mediaDevices.getUserMedia(a.c);
         this.captureMode = a.tag;
+        diag.push('OPENED with: ' + a.tag);
         break;
       }catch(e){
         const nm = (e && e.name) ? e.name : 'Error';
+        const ms = (e && e.message) ? (' — ' + e.message) : '';
         failures.push(a.tag + ' → ' + nm);
+        diag.push('attempt ' + a.tag + ': ' + nm + ms);
         /* A refusal is about permission, not constraints; retrying cannot help. */
         if (nm === 'NotAllowedError' || nm === 'SecurityError') break;
       }
     }
+
+    if (wasRunning){
+      try{ await audio.ctx.resume(); }catch(e){}
+    }
+    this.diag = diag;
 
     if (!stream){
       btn.disabled = false; btn.textContent = 'Start listening';
@@ -1446,14 +1520,17 @@ const tuner = {
       } else if (first === 'NotFoundError'){
         h.textContent = 'No microphone was found on this device. Reference pitches still work. [' + first + ']';
       } else if (first === 'NotReadableError'){
-        h.textContent = 'Another app is holding the microphone — a call, a voice assistant or a ' +
-          'recorder. Close it, then try again. (Tried: ' + failures.join(', ') + ')';
+        h.textContent = 'The system would not open the microphone. That usually means another app ' +
+          'holds it (a call, voice assistant or recorder), but it can also be the device refusing. ' +
+          'Open the details below and send them on if this keeps happening.';
       } else {
         h.textContent = 'Could not open the microphone. (Tried: ' + failures.join(', ') + ') ' +
           'Reference pitches on the right still work.';
       }
+      this.showDiag();
       return;
     }
+    $('micDiagWrap').hidden = true;
     this.stream = stream;
 
     /* Share the one AudioContext with playback. A second context competing for
@@ -1479,6 +1556,15 @@ const tuner = {
     h.textContent = 'Play one string at a time. Nothing is recorded or sent anywhere.' +
       (this.captureMode === 'default' ? ' (Using the device’s processed input.)' : '');
     this.loop();
+  },
+
+  showDiag:function(){
+    const wrap = $('micDiagWrap'), pre = $('micDiag');
+    if (!wrap || !pre) return;
+    const lines = (this.diag || []).slice();
+    lines.push('userAgent: ' + navigator.userAgent);
+    pre.textContent = lines.join('\n');
+    wrap.hidden = false;
   },
 
   stop:function(){
@@ -1991,6 +2077,18 @@ function init(){
   });
 
   /* --- options --- */
+  $('copyDiag').addEventListener('click', function(){
+    const t = $('micDiag').textContent;
+    const done = function(){ const b = $('copyDiag'); b.textContent = 'Copied'; 
+      setTimeout(function(){ b.textContent = 'Copy details'; }, 1200); };
+    if (navigator.clipboard && navigator.clipboard.writeText){
+      navigator.clipboard.writeText(t).then(done, function(){});
+    } else {
+      const r = document.createRange(); r.selectNodeContents($('micDiag'));
+      const sel = window.getSelection(); sel.removeAllRanges(); sel.addRange(r);
+    }
+  });
+
   $('checkUpd').addEventListener('click', checkUpdates);
   $('resetData').addEventListener('click', function(){
     if (!confirm('Reset every chart, tuning and preference on this device? This cannot be undone.')) return;
