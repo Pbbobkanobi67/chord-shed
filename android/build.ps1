@@ -92,17 +92,38 @@ Write-Host '-> classes.dex added' -ForegroundColor Cyan
 Run $ALIGN @('-p','-f','4',"$OUT\unsigned.apk","$OUT\aligned.apk") 'zipalign'
 
 # 7. sign
-$KS = 'chordshed.keystore'
+# The signing password lives in keystore.properties, which is gitignored. It
+# must never be written here: this file is committed and the repo is public.
+$KSPROPS = 'keystore.properties'
+if (-not (Test-Path $KSPROPS)) {
+  throw "missing $KSPROPS. It holds the signing password and is deliberately not committed; restore it from the keystore backup."
+}
+$props = @{}
+foreach ($line in Get-Content $KSPROPS) {
+  $t = $line.Trim()
+  if ($t.Length -eq 0 -or $t.StartsWith('#')) { continue }
+  $i = $t.IndexOf('=')
+  if ($i -lt 1) { continue }
+  $props[$t.Substring(0, $i).Trim()] = $t.Substring($i + 1).Trim()
+}
+foreach ($need in 'storeFile','storePassword','keyAlias') {
+  if (-not $props[$need]) { throw "$KSPROPS is missing $need" }
+}
+$KS        = $props['storeFile']
+$KS_PASS   = $props['storePassword']
+$KEY_ALIAS = $props['keyAlias']
+$KEY_PASS  = $props['keyPassword']
+if (-not $KEY_PASS) { $KEY_PASS = $KS_PASS }
+
+# Deliberately NOT generating a key when one is missing. A fresh key would
+# produce a perfectly valid APK that no installed copy can ever update, and
+# that failure would only surface later, on someone else's phone.
 if (-not (Test-Path $KS)) {
-  Write-Host '-> generating signing key (valid 30 years)' -ForegroundColor Cyan
-  & keytool -genkeypair -v -keystore $KS -alias chordshed -keyalg RSA -keysize 2048 `
-      -validity 10950 -storepass chordshed -keypass chordshed `
-      -dname 'CN=Chord Shed, OU=Local Build, O=Chord Shed, C=US' 2>&1 | Out-Null
-  if ($LASTEXITCODE -ne 0) { throw 'keytool failed' }
+  throw "missing $KS. Restore the real signing key from the backup; do not generate a new one, or installed copies can never update."
 }
 Run $SIGN @(
-  'sign','--ks',$KS,'--ks-pass','pass:chordshed','--key-pass','pass:chordshed',
-  '--ks-key-alias','chordshed',
+  'sign','--ks',$KS,'--ks-pass',"pass:$KS_PASS",'--key-pass',"pass:$KEY_PASS",
+  '--ks-key-alias',$KEY_ALIAS,
   '--v1-signing-enabled','true','--v2-signing-enabled','true','--v3-signing-enabled','true',
   '--out',"$OUT\chord-shed.apk","$OUT\aligned.apk"
 ) 'apksigner sign'
