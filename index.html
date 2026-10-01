@@ -878,20 +878,70 @@ function generate(tuning, rootPc, type, tuningId){
 /* =====================================================================
    Audio: Karplus-Strong pluck, strum, metronome click
    ===================================================================== */
+/* Per-instrument voice. t60: seconds for a mid note to fall 60 dB.
+   S: loss-filter weight (0.5 = darkest; lower lets upper harmonics ring).
+   pick: pluck point as a fraction of the string (sets the comb notches).
+   body: peaking filters standing in for the soundbox resonances. */
+const VOICES = {
+  guitar:  {dur:3.4, t60:4.8, S:0.36, bright:0.75, pick:0.13, detune:0.0009, gap:0.030, click:0.10,
+            body:[[98,2.4,5],[205,2.2,3.5],[420,1.4,-2],[2600,1.0,2.5]], lp:8500, hp:70},
+  ukulele: {dur:2.6, t60:3.0, S:0.48, bright:0.55, pick:0.20, detune:0.0006, gap:0.020, click:0.03,
+            body:[[270,2.2,4.5],[540,2.0,2.5],[1150,1.6,1.5]], lp:5200, hp:140}
+};
+
 const audio = {
-  ctx:null, cache:{}, out:null,
+  ctx:null, cache:{}, out:null, buses:{},
   ready:function(){
     if (this.ctx) return this.ctx;
     const AC = window.AudioContext || window.webkitAudioContext;
     if (!AC) return null;
-    this.ctx = new AC();
-    const filt = this.ctx.createBiquadFilter();
-    filt.type = 'lowpass'; filt.frequency.value = 5200;
-    const comp = this.ctx.createDynamicsCompressor();
-    const g = this.ctx.createGain(); g.gain.value = 0.9;
-    filt.connect(comp); comp.connect(g); g.connect(this.ctx.destination);
-    this.out = filt;
-    return this.ctx;
+    const ctx = this.ctx = new AC();
+    const comp = ctx.createDynamicsCompressor();
+    comp.threshold.value = -16; comp.ratio.value = 3; comp.attack.value = 0.004; comp.release.value = 0.2;
+    const master = ctx.createGain(); master.gain.value = 0.95;
+    comp.connect(master); master.connect(ctx.destination);
+    /* small-room reverb from a generated impulse response */
+    const verb = ctx.createConvolver();
+    verb.buffer = this.roomIR(ctx, 1.3);
+    const wet = ctx.createGain(); wet.gain.value = 0.22;
+    verb.connect(wet); wet.connect(comp);
+    /* each instrument gets its own body EQ, then dry + reverb send */
+    const self = this;
+    Object.keys(VOICES).forEach(function(name){
+      const V = VOICES[name];
+      const hp = ctx.createBiquadFilter(); hp.type = 'highpass'; hp.frequency.value = V.hp;
+      let node = hp;
+      V.body.forEach(function(b){
+        const f = ctx.createBiquadFilter();
+        f.type = 'peaking'; f.frequency.value = b[0]; f.Q.value = b[1]; f.gain.value = b[2];
+        node.connect(f); node = f;
+      });
+      const lp = ctx.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = V.lp; lp.Q.value = 0.5;
+      node.connect(lp);
+      lp.connect(comp);
+      const send = ctx.createGain(); send.gain.value = 1;
+      lp.connect(send); send.connect(verb);
+      self.buses[name] = hp;
+    });
+    this.out = this.buses.guitar;
+    return ctx;
+  },
+  bus:function(tone){ return this.buses[tone] || this.out; },
+  roomIR:function(ctx, secs){
+    const sr = ctx.sampleRate, n = Math.floor(sr * secs);
+    const ir = ctx.createBuffer(2, n, sr);
+    for (let ch = 0; ch < 2; ch++){
+      const d = ir.getChannelData(ch);
+      let lp = 0;
+      for (let i = 0; i < n; i++){
+        const t = i / sr;
+        /* darker as it decays, with a short pre-delay */
+        const k = 0.55 - 0.4 * (i / n);
+        lp += k * ((Math.random() * 2 - 1) - lp);
+        d[i] = t < 0.012 ? 0 : lp * Math.exp(-t * 5.2);
+      }
+    }
+    return ir;
   },
   resume:function(){
     const c = this.ready();
@@ -902,59 +952,106 @@ const audio = {
     const key = midi + ':' + tone;
     if (this.cache[key]) return this.cache[key];
     const ctx = this.ctx, sr = ctx.sampleRate, freq = midiToFreq(midi);
-    const nylon = tone === 'ukulele';
-    const dur = nylon ? 1.9 : 2.8, damp = nylon ? 0.9955 : 0.9976, bright = nylon ? 0.62 : 0.45;
-    const N = Math.floor(sr * dur);
+    const V = VOICES[tone] || VOICES.guitar;
+    const N = Math.floor(sr * V.dur);
     const buf = ctx.createBuffer(1, N, sr), d = buf.getChannelData(0);
-    const L = Math.max(2, Math.round(sr / freq));
-    const line = new Float32Array(L);
-    let lp = 0;
-    for (let i = 0; i < L; i++){ const w = Math.random() * 2 - 1; lp = lp * (1 - bright) + w * bright; line[i] = lp; }
-    let idx = 0, prev = 0;
-    const fade = Math.floor(sr * 0.25);
+    /* low strings ring longer than high ones */
+    const t60 = V.t60 * Math.pow(2, -(midi - 52) / 30);
+    /* two polarisations of the same string, slightly apart in pitch and decay:
+       their beating is what keeps a real string from sounding static */
+    this.pluck(d, sr, freq, t60, V, 0.68);
+    this.pluck(d, sr, freq * (1 + V.detune), t60 * 0.75, V, 0.32);
+    /* pick / fingernail transient */
+    if (V.click > 0){
+      const cn = Math.floor(sr * 0.004);
+      let hp = 0, last = 0;
+      for (let i = 0; i < cn; i++){
+        const w = Math.random() * 2 - 1;
+        hp = 0.7 * (hp + w - last); last = w;
+        d[i] += hp * V.click * (1 - i / cn);
+      }
+    }
+    let peak = 0;
+    for (let i = 0; i < N; i++){ const a = Math.abs(d[i]); if (a > peak) peak = a; }
+    const norm = peak > 0 ? 0.6 / peak : 1, fade = Math.floor(sr * 0.3);
     for (let i = 0; i < N; i++){
-      const curr = line[idx];
-      line[idx] = (curr + prev) * 0.5 * damp;
-      prev = curr; idx = (idx + 1) % L;
-      let s = curr * 0.55;
-      if (i > N - fade) s *= (N - i) / fade;
-      d[i] = s;
+      d[i] *= norm;
+      if (i > N - fade) d[i] *= (N - i) / fade;
     }
     this.cache[key] = buf;
     return buf;
   },
-  note:function(midi, when, gain, tone){
+  /* Extended Karplus-Strong, summed into out. The loop delay is split into an
+     integer line plus an allpass fraction so every note is in tune; the plain
+     integer version drifts flat by up to ~15 cents on the top strings. */
+  pluck:function(out, sr, freq, t60, V, amp){
+    const S = V.S;
+    let D = sr / freq - S;
+    let Ni = Math.floor(D), frac = D - Ni;
+    if (frac < 0.15){ Ni -= 1; frac += 1; }
+    Ni = Math.max(2, Ni);
+    const c = (1 - frac) / (1 + frac);
+    const rho = Math.pow(10, -3 / (freq * t60));
+    /* excitation: low-passed noise, combed at the pick point, DC removed */
+    const line = new Float32Array(Ni), exc = new Float32Array(Ni);
+    let lp = 0, mean = 0;
+    for (let i = 0; i < Ni; i++){ lp += V.bright * ((Math.random() * 2 - 1) - lp); exc[i] = lp; }
+    const pk = Math.max(1, Math.round(V.pick * Ni));
+    for (let i = 0; i < Ni; i++){ line[i] = exc[i] - (i >= pk ? exc[i - pk] : 0); mean += line[i]; }
+    mean /= Ni;
+    for (let i = 0; i < Ni; i++) line[i] -= mean;
+    let idx = 0, px = 0, apIn = 0, apOut = 0;
+    for (let i = 0, n = out.length; i < n; i++){
+      const x = line[idx];
+      out[i] += x * amp;
+      const lf = rho * ((1 - S) * x + S * px); px = x;
+      const ap = c * lf + apIn - c * apOut; apIn = lf; apOut = ap;
+      line[idx] = ap;
+      idx = idx + 1 === Ni ? 0 : idx + 1;
+    }
+  },
+  note:function(midi, when, gain, tone, pan){
     const ctx = this.ready(); if (!ctx) return;
     const src = ctx.createBufferSource();
     src.buffer = this.buffer(midi, tone);
     const g = ctx.createGain(); g.gain.value = gain;
-    src.connect(g); g.connect(this.out);
+    src.connect(g);
+    if (pan && ctx.createStereoPanner){
+      const p = ctx.createStereoPanner(); p.pan.value = pan;
+      g.connect(p); p.connect(this.bus(tone));
+    } else g.connect(this.bus(tone));
     src.start(when);
   },
   /* dir: 'down' low-to-high, 'up' high-to-low. muted: short damped chunk. */
   strum:function(midis, tone, at, dir, muted){
     const ctx = this.ready(); if (!ctx) return;
     const t0 = at || ctx.currentTime + 0.02;
-    const gap = (tone === 'ukulele' ? 0.022 : 0.032) * (muted ? 0.5 : 1);
+    const V = VOICES[tone] || VOICES.guitar;
+    /* slightly uneven spacing, like a real hand */
+    const gap = V.gap * (muted ? 0.5 : 1) * (0.9 + Math.random() * 0.2);
+    const n = midis.length;
     const order = [];
-    for (let i = 0; i < midis.length; i++) order.push(i);
+    for (let i = 0; i < n; i++) order.push(i);
     if (dir === 'up') order.reverse();
     order.forEach(function(si, k){
       const m = midis[si];
       if (m === null || m === undefined) return;
-      const gain = (muted ? 0.20 : 0.55) + Math.random() * 0.08;
+      /* up-strums catch the treble strings harder; the first string hit is loudest */
+      const gain = ((muted ? 0.22 : 0.5) + Math.random() * 0.08) * (dir === 'up' ? 0.85 : 1) * (1 - k * 0.03);
+      const pan = n > 1 ? (si / (n - 1) - 0.5) * 0.35 : 0;
+      const t = t0 + k * gap + Math.random() * 0.003;
       if (muted){
-        /* percussive chunk: very short burst of the string's tone */
+        /* percussive chunk: very short, dulled burst of the string's tone */
         const src = ctx.createBufferSource();
         src.buffer = audio.buffer(m, tone);
+        const lp = ctx.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 1400;
         const g = ctx.createGain();
-        const t = t0 + k * gap;
         g.gain.setValueAtTime(gain, t);
-        g.gain.exponentialRampToValueAtTime(0.001, t + 0.09);
-        src.connect(g); g.connect(audio.out);
-        src.start(t); src.stop(t + 0.12);
+        g.gain.exponentialRampToValueAtTime(0.001, t + 0.07);
+        src.connect(lp); lp.connect(g); g.connect(audio.bus(tone));
+        src.start(t); src.stop(t + 0.1);
       } else {
-        audio.note(m, t0 + k * gap, gain, tone);
+        audio.note(m, t, gain, tone, pan);
       }
     });
   },
