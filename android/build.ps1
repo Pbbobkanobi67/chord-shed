@@ -15,8 +15,8 @@ foreach ($p in $AAPT, $D8, $ALIGN, $SIGN, $JAR) {
 }
 
 # versionCode must strictly increase or Android refuses the update.
-$VERSION_CODE = 12
-$VERSION_NAME = '2.1'
+$VERSION_CODE = 13
+$VERSION_NAME = '2.2'
 $OUT = 'out'
 
 if (Test-Path $OUT) { Remove-Item $OUT -Recurse -Force }
@@ -172,6 +172,9 @@ $verJson = @{
   # shape). `released` stays exactly as it was: the in-app update check has
   # shipped against it, so renaming it would break installed copies.
   size        = $size
+  # The in-app updater (Updater.java) refuses to install without this, and refuses
+  # a download that does not match it.
+  sha256      = (Get-FileHash "$OUT\chord-shed.apk" -Algorithm SHA256).Hash.ToLowerInvariant()
   releasedAt  = (Get-Date).ToUniversalTime().ToString('yyyy-MM-ddTHH:mm:ss.fffZ')
   notes       = 'See the release notes on GitHub for what changed.'
 } | ConvertTo-Json

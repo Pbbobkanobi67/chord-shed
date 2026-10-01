@@ -3,8 +3,11 @@ package com.chordshed.app;
 import android.Manifest;
 import android.app.Activity;
 import android.content.ActivityNotFoundException;
+import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
+import android.content.pm.PackageInstaller;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.content.res.Configuration;
@@ -17,6 +20,7 @@ import android.media.MediaRecorder;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
+import android.provider.Settings;
 import android.view.View;
 import android.view.ViewGroup;
 import android.webkit.DownloadListener;
@@ -44,9 +48,11 @@ import java.util.Map;
  * Permissions:
  *  - RECORD_AUDIO, used by the tuner to detect the pitch of the string you play.
  *    Audio is analysed in the page and discarded; nothing is recorded or stored.
- *  - INTERNET, used by Options > Check for updates, which fetches one small
- *    version file when the button is pressed. The app's own pages are never
+ *  - INTERNET, used only for updates: a once-a-day look at a small version file,
+ *    and the APK download when you tap Update. The app's own pages are never
  *    loaded over the network - they are served from inside the APK.
+ *  - REQUEST_INSTALL_PACKAGES, so an update can be handed straight to Android's
+ *    installer (see Updater). Android still shows its own confirm screen.
  */
 public class MainActivity extends Activity {
 
@@ -74,6 +80,46 @@ public class MainActivity extends Activity {
     /** True while Android's own permission dialog is up, so onPause does not
         tear down the WebView underneath it. */
     private boolean awaitingMic = false;
+
+    private Updater updater;
+    /** The installer's confirm-screen actions: CONFIRM_INSTALL from Android 10,
+        CONFIRM_PERMISSIONS on 8 and 9. Nothing else is ever launched. */
+    private static boolean isInstallerConfirm(Intent i) {
+        String a = i.getAction();
+        return "android.content.pm.action.CONFIRM_INSTALL".equals(a)
+                || "android.content.pm.action.CONFIRM_PERMISSIONS".equals(a);
+    }
+
+    /** Android's installer reports back here; mainly to ask the user to confirm. */
+    private final BroadcastReceiver installStatus = new BroadcastReceiver() {
+        @Override
+        @SuppressWarnings("deprecation")
+        public void onReceive(Context c, Intent i) {
+            if (updater == null
+                    || !updater.ownsSession(i.getIntExtra(PackageInstaller.EXTRA_SESSION_ID, -1))) return;
+            int st = i.getIntExtra(PackageInstaller.EXTRA_STATUS, PackageInstaller.STATUS_FAILURE);
+            if (st == PackageInstaller.STATUS_PENDING_USER_ACTION) {
+                Intent confirm = i.getParcelableExtra(Intent.EXTRA_INTENT);
+                // Only ever launch the installer's own confirm screen.
+                if (confirm != null && isInstallerConfirm(confirm)) {
+                    confirm.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                    try {
+                        startActivity(confirm);
+                        sendUpdateStatus("confirm", -1, "Confirm the update on Android's screen.");
+                        return;
+                    } catch (ActivityNotFoundException ignored) { }
+                }
+                sendUpdateStatus("error", -1, "Android did not show its install screen.");
+            } else if (st == PackageInstaller.STATUS_SUCCESS) {
+                sendUpdateStatus("done", -1, "Updated. Chord Shed will restart.");
+            } else if (st == PackageInstaller.STATUS_FAILURE_ABORTED) {
+                sendUpdateStatus("error", -1, "Update cancelled.");
+            } else {
+                String m = i.getStringExtra(PackageInstaller.EXTRA_STATUS_MESSAGE);
+                sendUpdateStatus("error", -1, "Android did not install it" + (m != null ? ": " + m : "."));
+            }
+        }
+    };
 
     @Override
     protected void onCreate(Bundle saved) {
@@ -161,6 +207,20 @@ public class MainActivity extends Activity {
         });
 
         web.addJavascriptInterface(new MicBridge(), "Mic");
+
+        updater = new Updater(this, new Updater.Listener() {
+            @Override
+            public void onStatus(String phase, int pct, String message) {
+                sendUpdateStatus(phase, pct, message);
+            }
+        });
+        web.addJavascriptInterface(new UpdateBridge(), "Updater");
+        IntentFilter f = new IntentFilter(Updater.ACTION_STATUS);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            registerReceiver(installStatus, f, Context.RECEIVER_NOT_EXPORTED);
+        } else {
+            registerReceiver(installStatus, f);
+        }
 
         setContentView(web, new ViewGroup.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
@@ -394,6 +454,49 @@ public class MainActivity extends Activity {
         }
     }
 
+    private void sendUpdateStatus(final String phase, final int pct, final String message) {
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                if (web == null) return;
+                web.evaluateJavascript("window.__onUpdate && window.__onUpdate(" + quote(phase) + ","
+                        + pct + "," + quote(message) + ");", null);
+            }
+        });
+    }
+
+    /** Exposed to the page as Updater.*. The page can start an update but not
+        choose what is downloaded; Updater reads the version file itself. */
+    private class UpdateBridge {
+        @JavascriptInterface
+        public void install() {
+            updater.start();
+        }
+
+        @JavascriptInterface
+        public boolean canInstall() {
+            return updater.canInstall();
+        }
+
+        /** Opens the "Install unknown apps" switch for this app. onResume carries on. */
+        @JavascriptInterface
+        public void allowInstalls() {
+            runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return;
+                    try {
+                        startActivity(new Intent(Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES,
+                                Uri.parse("package:" + getPackageName())));
+                    } catch (ActivityNotFoundException e) {
+                        sendUpdateStatus("error", -1,
+                                "Open Settings > Apps > Chord Shed > Install unknown apps, and allow it.");
+                    }
+                }
+            });
+        }
+    }
+
     private boolean isNight() {
         int mode = getResources().getConfiguration().uiMode & Configuration.UI_MODE_NIGHT_MASK;
         return mode == Configuration.UI_MODE_NIGHT_YES;
@@ -462,10 +565,18 @@ public class MainActivity extends Activity {
         web.onResume();
         applyTheme();
         if (loaded) injectBuildInfo();   // refresh micGranted after the dialog
+        // Back from the "install unknown apps" switch with a verified update waiting.
+        if (updater != null && updater.hasReady()) {
+            new Thread(new Runnable() {
+                @Override
+                public void run() { updater.installIfAllowed(); }
+            }, "chordshed-install").start();
+        }
     }
 
     @Override
     protected void onDestroy() {
+        try { unregisterReceiver(installStatus); } catch (IllegalArgumentException ignored) { }
         if (web != null) {
             web.destroy();
             web = null;
