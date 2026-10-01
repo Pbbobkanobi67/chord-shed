@@ -1,9 +1,9 @@
 {
-  "released": "2026-09-23",
-  "versionName": "2.0",
-  "versionCode": 11,
-  "apk": "/dl/chord-shed.apk",
   "notes": "See the release notes on GitHub for what changed.",
-  "size": 554705,
-  "releasedAt": "2026-09-23T16:17:09.341Z"
+  "size": 558801,
+  "versionName": "2.1",
+  "releasedAt": "2026-10-01T06:45:59.229Z",
+  "released": "2026-09-30",
+  "apk": "/dl/chord-shed.apk",
+  "versionCode": 12
 }

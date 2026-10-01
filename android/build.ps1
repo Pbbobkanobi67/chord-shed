@@ -15,8 +15,8 @@ foreach ($p in $AAPT, $D8, $ALIGN, $SIGN, $JAR) {
 }
 
 # versionCode must strictly increase or Android refuses the update.
-$VERSION_CODE = 11
-$VERSION_NAME = '2.0'
+$VERSION_CODE = 12
+$VERSION_NAME = '2.1'
 $OUT = 'out'
 
 if (Test-Path $OUT) { Remove-Item $OUT -Recurse -Force }
