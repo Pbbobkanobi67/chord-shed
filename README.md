@@ -64,13 +64,29 @@ cd android
 Output: `android/out/chord-shed.apk`. Package `com.chordshed.app`, minSdk 26 (Android 8.0),
 targetSdk 34, ~530 KB.
 
-The APK declares two permissions:
+The APK declares these permissions:
 
 - **`RECORD_AUDIO`** — the tuner, to hear the string you play. Audio is analysed in the page and
   discarded; nothing is recorded or stored. Refusing it costs you only the listening tuner, since
   reference pitches still work.
-- **`INTERNET`** (plus `ACCESS_NETWORK_STATE`) — *only* Options → Check for updates, which fetches
-  `version.json` when you press the button. The app never loads its own pages over the network.
+- **`INTERNET`** (plus `ACCESS_NETWORK_STATE`) — *only* for updates. At most once a day, on launch,
+  the app fetches `version.json`; Options → Check for updates does the same on demand. The APK is
+  downloaded only when you tap **Update**. The app never loads its own pages over the network.
+- **`REQUEST_INSTALL_PACKAGES`** — so an update goes straight to Android's installer instead of via
+  the browser. Android asks you once to allow installs from Chord Shed, and shows its own confirm
+  screen for every update.
+
+### In-app updates
+
+`Updater.java` reads `version.json` itself; the page can start an update but cannot choose what is
+downloaded. Before handing the file to Android it checks that:
+
+1. its SHA-256 matches the `sha256` in `version.json` (written by `build.ps1`; no checksum, no install),
+2. it is `com.chordshed.app` at a higher `versionCode` than the installed copy, and
+3. it is signed with the same certificate as the installed app.
+
+Android enforces the signature too, but only after its confirm screen, as a bare "App not installed".
+Updates from 2.1 or older still go through the browser; in-app updates work from 2.2 onward.
 
 The page and its three typefaces ship inside the package, so everything except the update check
 works in airplane mode.
