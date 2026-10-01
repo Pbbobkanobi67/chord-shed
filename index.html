@@ -223,6 +223,8 @@ input[type=range]{flex:1 1 150px; min-width:120px; accent-color:var(--accent)}
   color:var(--ink-2); border-radius:999px; padding:7px 11px; cursor:pointer}
 .preset:hover{border-color:var(--accent); color:var(--ink)}
 .nowplaying{font-family:"Bodoni Moda",Georgia,serif; font-size:30px; line-height:1.1; margin-top:2px}
+.pracdiagram{display:flex; justify-content:center; margin-top:10px}
+.pracdiagram:empty{display:none}
 .nowplaying small{display:block; font:400 11px/1.4 "IBM Plex Mono",monospace; color:var(--ink-3);
   letter-spacing:.06em; margin-top:5px; font-family:"IBM Plex Mono",monospace}
 
@@ -504,6 +506,7 @@ footer .colophon{flex:1 1 320px; display:flex; flex-direction:column; gap:2px}
       <div class="card" style="padding:18px">
         <div class="sechead" style="margin-bottom:8px"><h2>Playing</h2></div>
         <div class="nowplaying" id="nowPlaying">C<small>current chord</small></div>
+        <div class="pracdiagram" id="pracDiagram"></div>
         <p class="hint" style="margin:14px 0 0" id="pracHint">
           Plays the chord showing in the Chords tab. Turn on <b>Follow chart</b> to run through the
           active chart, one bar per chord.
@@ -883,9 +886,9 @@ function generate(tuning, rootPc, type, tuningId){
    pick: pluck point as a fraction of the string (sets the comb notches).
    body: peaking filters standing in for the soundbox resonances. */
 const VOICES = {
-  guitar:  {dur:3.4, t60:4.8, S:0.36, bright:0.75, pick:0.13, detune:0.0009, gap:0.030, click:0.10,
+  guitar:  {dur:3.4, t60:4.8, S:0.36, bright:0.6, pick:0.17, noise:0.45, detune:0.0009, gap:0.030, click:0.10,
             body:[[98,2.4,5],[205,2.2,3.5],[420,1.4,-2],[2600,1.0,2.5]], lp:8500, hp:70},
-  ukulele: {dur:2.6, t60:3.0, S:0.48, bright:0.55, pick:0.20, detune:0.0006, gap:0.020, click:0.03,
+  ukulele: {dur:2.6, t60:3.0, S:0.47, bright:0.4, pick:0.24, noise:0.28, detune:0.0006, gap:0.020, click:0.03,
             body:[[270,2.2,4.5],[540,2.0,2.5],[1150,1.6,1.5]], lp:5200, hp:140}
 };
 
@@ -992,12 +995,20 @@ const audio = {
     Ni = Math.max(2, Ni);
     const c = (1 - frac) / (1 + frac);
     const rho = Math.pow(10, -3 / (freq * t60));
-    /* excitation: low-passed noise, combed at the pick point, DC removed */
-    const line = new Float32Array(Ni), exc = new Float32Array(Ni);
+    /* excitation: the string pulled into a triangle at the pick point (harmonics fall
+       as 1/n^2, so the fundamental carries the weight), a little noise for texture,
+       then a low-pass for how hard the pick or finger is. DC removed. */
+    const line = new Float32Array(Ni);
+    const pk = Math.min(Ni - 1, Math.max(1, Math.round(V.pick * Ni)));
     let lp = 0, mean = 0;
-    for (let i = 0; i < Ni; i++){ lp += V.bright * ((Math.random() * 2 - 1) - lp); exc[i] = lp; }
-    const pk = Math.max(1, Math.round(V.pick * Ni));
-    for (let i = 0; i < Ni; i++){ line[i] = exc[i] - (i >= pk ? exc[i - pk] : 0); mean += line[i]; }
+    for (let k = 0; k < 2; k++){              /* two passes: settle the filter, then write */
+      for (let i = 0; i < Ni; i++){
+        const tri = i < pk ? i / pk : (Ni - i) / (Ni - pk);
+        lp += V.bright * ((tri + V.noise * (Math.random() * 2 - 1)) - lp);
+        if (k) line[i] = lp;
+      }
+    }
+    for (let i = 0; i < Ni; i++) mean += line[i];
     mean /= Ni;
     for (let i = 0; i < Ni; i++) line[i] -= mean;
     let idx = 0, px = 0, apIn = 0, apOut = 0;
@@ -1149,7 +1160,10 @@ function load(){
 /* =====================================================================
    Diagram
    ===================================================================== */
-function drawDiagram(v){
+/* pc/tid default to the chord on the Chords tab; interactive adds per-string tap targets. */
+function drawDiagram(v, pc, tid, interactive){
+  if (pc === undefined){ pc = state.rootPc; tid = state.typeId; }
+  if (interactive === undefined) interactive = true;
   const t = tuning(), n = t.strings.length;
   const FRETS = 5;
   const narrow = window.innerWidth < 520;
@@ -1225,15 +1239,15 @@ function drawDiagram(v){
       if (fin) s += '<text x="' + x + '" y="' + (y+4.3) + '" text-anchor="middle" ' +
         'font-family="IBM Plex Mono, monospace" font-size="11.5" font-weight="500" fill="var(--dot-ink)">' + fin + '</text>';
     }
-    const pcName = {};
-    type().iv.forEach(function(iv){ pcName[(state.rootPc + iv) % 12] = spell(rootName(), iv); });
+    const pcName = {}, rn = ROOTS.find(function(r){ return r.pc === pc; }).name;
+    TYPE_BY_ID[tid].iv.forEach(function(iv){ pcName[(pc + iv) % 12] = spell(rn, iv); });
     for (let i = 0; i < n; i++){
       const x = xOf(i), y = padTop + fg * FRETS + 19, f = v.frets[i];
       const txt = f === null ? '·' : (pcName[(t.strings[i] + f) % 12] || '');
       s += '<text x="' + x + '" y="' + y + '" text-anchor="middle" font-family="IBM Plex Mono, monospace" ' +
            'font-size="11" fill="' + (f === null ? 'var(--line-2)' : 'var(--ink-3)') + '">' + txt + '</text>';
     }
-    for (let i = 0; i < n; i++){
+    if (interactive) for (let i = 0; i < n; i++){
       const x = xOf(i);
       s += '<rect class="hit" data-string="' + i + '" x="' + (x - sg/2) + '" y="' + (padTop - 24) +
            '" width="' + sg + '" height="' + (fg * FRETS + 44) + '"><title>Play this string</title></rect>';
@@ -1300,6 +1314,7 @@ function renderStage(){
   });
   $('nowPlaying').innerHTML = chordLabel(state.rootPc, state.typeId) +
     '<small>' + (state.follow ? 'following chart' : 'current chord') + '</small>';
+  if (!seq.on) renderPracDiagram(state.rootPc, state.typeId);
 }
 
 function currentMidis(){
@@ -1312,6 +1327,18 @@ function midisFor(pc, tid){
   const vs = generate(t, pc, TYPE_BY_ID[tid], state.tuningId);
   if (!vs.length) return [];
   return vs[0].frets.map(function(f, i){ return f === null ? null : t.strings[i] + f; });
+}
+/* Practice card: the shape being strummed. Mirrors seq.schedule — the voicing picked on the
+   Chords tab when not following a chart, otherwise the top-ranked one (as midisFor). */
+let pracShown = '';
+function renderPracDiagram(pc, tid){
+  const picked = !(state.follow && seq.on) && pc === state.rootPc && tid === state.typeId;
+  const key = state.tuningId + '|' + state.lefty + '|' + pc + '|' + tid + '|' + (picked ? state.vIndex : 'top');
+  if (key === pracShown) return;
+  pracShown = key;
+  const v = picked ? state.voicings[state.vIndex]
+                   : generate(tuning(), pc, TYPE_BY_ID[tid], state.tuningId)[0];
+  $('pracDiagram').innerHTML = v ? drawDiagram(v, pc, tid, false) : '';
 }
 function strum(dir){
   if (!state.sound) return;
@@ -1440,7 +1467,7 @@ const seq = {
           ? currentMidis() : midisFor(ch.pc, ch.t);
         audio.strum(midis, tuning().inst, when, kind === 'U' ? 'up' : 'down', kind === 'x');
       }
-      this.drawQueue.push({t:when, step:step, chordIdx:ch.idx, label:chordLabel(ch.pc, ch.t)});
+      this.drawQueue.push({t:when, step:step, chordIdx:ch.idx, label:chordLabel(ch.pc, ch.t), pc:ch.pc, tid:ch.t});
 
       this.nextTime += eighth;
       this.step++;
@@ -1466,6 +1493,7 @@ const seq = {
           }
           $('nowPlaying').innerHTML = cur.label +
             '<small>' + (state.follow ? 'bar ' + (self.bar + 1) + ' · following chart' : 'current chord') + '</small>';
+          renderPracDiagram(cur.pc, cur.tid);
         }
       }
       self.raf = requestAnimationFrame(frame);
