@@ -1,10 +1,10 @@
 {
-  "sha256": "aa18a9577c9ee78ce0d81cfe8dce335421c254b2c7a4c83b009180b6d723eacc",
-  "released": "2026-09-30",
-  "versionCode": 13,
-  "releasedAt": "2026-10-01T06:55:02.786Z",
-  "apk": "/dl/chord-shed.apk",
-  "size": 566993,
+  "sha256": "3eca3d2b5fa3e3cb0cf9a488e61098b809a13ea789796a39e965548870e523f3",
+  "releasedAt": "2026-10-02T21:04:57.713Z",
+  "versionCode": 14,
+  "versionName": "2.3",
+  "released": "2026-10-02",
   "notes": "See the release notes on GitHub for what changed.",
-  "versionName": "2.2"
+  "size": 566993,
+  "apk": "/dl/chord-shed.apk"
 }

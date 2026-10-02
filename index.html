@@ -1,3 +1,4 @@
+<meta charset="utf-8">
 <title>Chord Shed</title>
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:opsz,wght@6..96,400;6..96,600;6..96,700&family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
@@ -248,9 +249,13 @@ input[type=range]{flex:1 1 150px; min-width:120px; accent-color:var(--accent)}
 .progitem .pn{font-family:"Bodoni Moda",Georgia,serif; font-size:19px; line-height:1.1}
 .progitem .pb{font:500 9px/1 "IBM Plex Mono",monospace; color:var(--ink-3); letter-spacing:.1em}
 .progitem .row{display:flex; gap:3px; margin-top:4px}
-.progitem .mini{width:19px; height:19px; border-radius:5px; border:1px solid var(--line);
-  background:var(--panel); color:var(--ink-3); font-size:10px; line-height:1; cursor:pointer; padding:0}
+.progitem .mini{display:grid; place-items:center; width:24px; height:24px; border-radius:6px;
+  border:1px solid var(--line); background:var(--panel); color:var(--ink-3); cursor:pointer; padding:0}
+.progitem .mini svg{width:14px; height:14px; display:block}
 .progitem .mini:hover{color:var(--ink); border-color:var(--line-2)}
+.progitem .mini.del:hover{color:var(--ochre); border-color:var(--ochre)}
+.progitem .mini:disabled{opacity:.3; cursor:default}
+.progitem .mini:disabled:hover{color:var(--ink-3); border-color:var(--line)}
 .progempty{display:flex; align-items:center; color:var(--ink-3); font-size:13px; font-style:italic}
 
 /* ---------- options ---------- */
@@ -555,7 +560,7 @@ footer .colophon{flex:1 1 320px; display:flex; flex-direction:column; gap:2px}
         </div>
         <div class="prog" id="prog"></div>
         <p class="hint" style="margin:12px 0 0">
-          Add chords from the Chords tab. Tap a chord here to load its shape; use ‹ › to reorder.
+          Add chords from the Chords tab. Tap a chord here to load its shape. Use the arrows to move it, the bin to remove it.
         </p>
       </div>
     </div>
@@ -1350,7 +1355,8 @@ function midisFor(pc, tid){
 let pracShown = '';
 function renderPracDiagram(pc, tid){
   const picked = !(state.follow && seq.on) && pc === state.rootPc && tid === state.typeId;
-  const key = state.tuningId + '|' + state.lefty + '|' + pc + '|' + tid + '|' + (picked ? state.vIndex : 'top');
+  const key = state.tuningId + '|' + state.lefty + '|' + pc + '|' + tid + '|' + (picked ? state.vIndex : 'top') +
+              '|' + (window.innerWidth < 520);    /* drawDiagram sizes itself for narrow screens */
   if (key === pracShown) return;
   pracShown = key;
   const v = picked ? state.voicings[state.vIndex]
@@ -1384,6 +1390,14 @@ function renderKey(){
 /* =====================================================================
    Charts
    ===================================================================== */
+function icon(d){
+  return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" ' +
+         'stroke-linejoin="round" aria-hidden="true"><path d="' + d + '"/></svg>';
+}
+const ICON_LEFT  = icon('M15 6l-6 6 6 6');
+const ICON_RIGHT = icon('M9 6l6 6-6 6');
+const ICON_BIN   = icon('M4 7h16M10 11v6M14 11v6M6 7l1 12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-12M9 7V4h6v3');
+
 function renderCharts(){
   const list = $('chartList');
   list.innerHTML = state.charts.map(function(c){
@@ -1403,9 +1417,12 @@ function renderCharts(){
         '<span class="pn">' + chordLabel(ch.pc, ch.t) + '</span>' +
         '<span class="pb">BAR ' + (i+1) + '</span>' +
         '<span class="row">' +
-          '<button class="mini" data-mv="-1" data-i="' + i + '" aria-label="Move left">‹</button>' +
-          '<button class="mini" data-del="' + i + '" aria-label="Remove">×</button>' +
-          '<button class="mini" data-mv="1" data-i="' + i + '" aria-label="Move right">›</button>' +
+          '<button class="mini" data-mv="-1" data-i="' + i + '" title="Move earlier" aria-label="Move earlier"' +
+            (i === 0 ? ' disabled' : '') + '>' + ICON_LEFT + '</button>' +
+          '<button class="mini del" data-del="' + i + '" title="Remove from chart" aria-label="Remove from chart">' +
+            ICON_BIN + '</button>' +
+          '<button class="mini" data-mv="1" data-i="' + i + '" title="Move later" aria-label="Move later"' +
+            (i === c.chords.length - 1 ? ' disabled' : '') + '>' + ICON_RIGHT + '</button>' +
         '</span></div>';
     }).join('');
   }
@@ -1986,7 +2003,7 @@ function parseChord(text){
 /* =====================================================================
    Options: build info and update check
    ===================================================================== */
-const WEB_VERSION = '1.5';                 /* bumped with each release */
+const WEB_VERSION = '2.3';                 /* build.ps1 refuses to build if this differs from the APK's */
 const VERSION_URL = 'https://chord-shed.vercel.app/version.json';
 const SITE_URL    = 'https://chord-shed.vercel.app';
 
