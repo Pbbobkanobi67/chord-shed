@@ -15,9 +15,15 @@ foreach ($p in $AAPT, $D8, $ALIGN, $SIGN, $JAR) {
 }
 
 # versionCode must strictly increase or Android refuses the update.
-$VERSION_CODE = 13
-$VERSION_NAME = '2.2'
+$VERSION_CODE = 14
+$VERSION_NAME = '2.3'
 $OUT = 'out'
+
+# The web page shows its own version in Options; it sat at 1.5 through three releases.
+$webVersion = [regex]::Match((Get-Content ..\index.html -Raw -Encoding UTF8), "const WEB_VERSION = '([^']*)'").Groups[1].Value
+if ($webVersion -ne $VERSION_NAME) {
+  throw "index.html WEB_VERSION is '$webVersion' but this build is '$VERSION_NAME'. Bump them together."
+}
 
 if (Test-Path $OUT) { Remove-Item $OUT -Recurse -Force }
 New-Item -ItemType Directory -Force -Path "$OUT\flat","$OUT\gen","$OUT\classes","$OUT\dex" | Out-Null
