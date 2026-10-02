@@ -257,6 +257,33 @@ input[type=range]{flex:1 1 150px; min-width:120px; accent-color:var(--accent)}
 .progitem .mini:disabled{opacity:.3; cursor:default}
 .progitem .mini:disabled:hover{color:var(--ink-3); border-color:var(--line)}
 .progempty{display:flex; align-items:center; color:var(--ink-3); font-size:13px; font-style:italic}
+.songsgrid{margin-top:22px}
+.chartitem .cdot{width:7px; height:7px; border-radius:50%; background:var(--accent); flex:0 0 auto}
+.parts{display:flex; gap:8px; flex-wrap:wrap; min-height:54px; align-items:stretch}
+.part{display:flex; flex-direction:column; gap:5px; min-width:120px; max-width:220px; padding:9px 10px 8px;
+  border:1px solid var(--line); border-radius:10px; background:var(--paper); cursor:pointer; color:var(--ink)}
+.part:hover{border-color:var(--line-2)}
+.part.playing{border-color:var(--accent); background:var(--accent-soft)}
+.part .ptop{display:flex; align-items:baseline; gap:6px}
+.part .pname{flex:1 1 auto; min-width:0; font:600 13px/1.2 "IBM Plex Sans",sans-serif;
+  overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+.part .preps{font:500 11px/1 "IBM Plex Mono",monospace; color:var(--accent-ink)}
+.part .pchords{display:flex; gap:4px; flex-wrap:wrap; font-family:"Bodoni Moda",Georgia,serif; font-size:15px}
+.part .pchords span{padding:0 2px; border-radius:4px}
+.part .pchords span.now{background:var(--accent); color:var(--on-accent)}
+.part .pchords em{font:italic 12px "IBM Plex Sans",sans-serif; color:var(--ink-3)}
+.part .row{display:flex; gap:3px; margin-top:2px}
+.part .mini{display:grid; place-items:center; width:24px; height:24px; border-radius:6px;
+  border:1px solid var(--line); background:var(--panel); color:var(--ink-3); cursor:pointer; padding:0}
+.part .mini svg{width:14px; height:14px; display:block}
+.part .mini:hover{color:var(--ink); border-color:var(--line-2)}
+.part .mini.del{margin-left:auto}
+.part .mini.del:hover{color:var(--ochre); border-color:var(--ochre)}
+.part .mini:disabled{opacity:.3; cursor:default}
+.part .mini:disabled:hover{color:var(--ink-3); border-color:var(--line)}
+.addpart{display:flex; gap:8px; align-items:center; flex-wrap:wrap; margin-top:12px}
+.addpart select{max-width:220px}
+.partsum{font:400 11px/1.3 "IBM Plex Mono",monospace; color:var(--ink-3); margin-left:auto}
 
 /* ---------- options ---------- */
 .optgrid{display:grid; grid-template-columns:repeat(auto-fit,minmax(min(100%,290px),1fr)); gap:22px; align-items:start}
@@ -561,6 +588,39 @@ footer .colophon{flex:1 1 320px; display:flex; flex-direction:column; gap:2px}
         <div class="prog" id="prog"></div>
         <p class="hint" style="margin:12px 0 0">
           Add chords from the Chords tab. Tap a chord here to load its shape. Use the arrows to move it, the bin to remove it.
+        </p>
+        <p class="hint" style="margin:6px 0 0" id="chartTempo"></p>
+      </div>
+    </div>
+
+    <div class="chartsgrid songsgrid">
+      <div class="card" style="padding:16px">
+        <div class="sechead" style="margin-bottom:10px">
+          <h2>Song ideas</h2>
+          <button type="button" class="btn sm" id="newSong">New</button>
+        </div>
+        <div class="chartlist" id="songList"></div>
+      </div>
+
+      <div class="card" style="padding:16px">
+        <div class="sechead">
+          <h2 id="activeSongName">Song idea</h2>
+          <div class="acts">
+            <button type="button" class="btn sm primary" id="playSong">Play song</button>
+            <button type="button" class="btn sm" id="renameSong">Rename</button>
+            <button type="button" class="btn sm" id="dupSong">Duplicate</button>
+            <button type="button" class="btn sm" id="delSong">Delete</button>
+          </div>
+        </div>
+        <div class="parts" id="parts"></div>
+        <div class="addpart">
+          <select id="partChart" aria-label="Chart to add as a part"></select>
+          <button type="button" class="btn sm" id="addPart">Add part</button>
+          <span class="partsum" id="songSum"></span>
+        </div>
+        <p class="hint" style="margin:10px 0 0">
+          A song idea is a run of your charts — verse, chorus, bridge — each played as many times as you set.
+          Tap a part to open its chart above.
         </p>
       </div>
     </div>
@@ -1119,6 +1179,7 @@ const state = {
   lefty:false, sound:true,
   view:'chords',
   charts:[], activeChart:null,
+  songs:[], activeSong:null,
   keyRoot:0, keyMode:'major',
   bpm:92, pattern:PRESETS[0].p.slice(), click:true, follow:false
 };
@@ -1133,6 +1194,10 @@ function chordLabel(pc, tid){
 function activeChart(){
   return state.charts.find(function(c){ return c.id === state.activeChart; }) || state.charts[0] || null;
 }
+function activeSong(){
+  return state.songs.find(function(s){ return s.id === state.activeSong; }) || state.songs[0] || null;
+}
+function chartById(id){ return state.charts.find(function(c){ return c.id === id; }) || null; }
 function uid(){ return 'c' + Date.now().toString(36) + Math.random().toString(36).slice(2,6); }
 
 function save(){
@@ -1140,6 +1205,7 @@ function save(){
     localStorage.setItem('chordshed', JSON.stringify({
       v:2, inst:state.inst, tuningId:state.tuningId, lefty:state.lefty, sound:state.sound,
       charts:state.charts, activeChart:state.activeChart,
+      songs:state.songs, activeSong:state.activeSong,
       keyRoot:state.keyRoot, keyMode:state.keyMode, view:state.view,
       bpm:state.bpm, pattern:state.pattern, click:state.click, follow:state.follow
     }));
@@ -1177,6 +1243,12 @@ function load(){
     state.activeChart = state.charts[0].id;
   }
   if (!activeChart() && state.charts.length) state.activeChart = state.charts[0].id;
+
+  /* song ideas: [{id, name, parts:[{chart:<chart id>, reps:n}]}] - absent before 2.4 */
+  if (Array.isArray(o.songs)) state.songs = o.songs.filter(function(x){ return x && Array.isArray(x.parts); });
+  if (!state.songs.length) state.songs = [{id:uid(), name:'Song idea 1', parts:[]}];
+  state.activeSong = o.activeSong;
+  if (!activeSong()) state.activeSong = state.songs[0].id;
 }
 
 /* =====================================================================
@@ -1354,7 +1426,7 @@ function midisFor(pc, tid){
    Chords tab when not following a chart, otherwise the top-ranked one (as midisFor). */
 let pracShown = '';
 function renderPracDiagram(pc, tid){
-  const picked = !(state.follow && seq.on) && pc === state.rootPc && tid === state.typeId;
+  const picked = !(seq.on && (state.follow || seq.source)) && pc === state.rootPc && tid === state.typeId;
   const key = state.tuningId + '|' + state.lefty + '|' + pc + '|' + tid + '|' + (picked ? state.vIndex : 'top') +
               '|' + (window.innerWidth < 520);    /* drawDiagram sizes itself for narrow screens */
   if (key === pracShown) return;
@@ -1396,6 +1468,8 @@ function icon(d){
 }
 const ICON_LEFT  = icon('M15 6l-6 6 6 6');
 const ICON_RIGHT = icon('M9 6l6 6-6 6');
+const ICON_PLUS  = icon('M12 6v12M6 12h12');
+const ICON_MINUS = icon('M6 12h12');
 const ICON_BIN   = icon('M4 7h16M10 11v6M14 11v6M6 7l1 12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-12M9 7V4h6v3');
 
 function renderCharts(){
@@ -1427,6 +1501,114 @@ function renderCharts(){
     }).join('');
   }
   ['delChart','renameChart','dupChart','playProg'].forEach(function(id){ $(id).disabled = !c; });
+  $('chartTempo').textContent = 'Plays at ' + state.bpm + ' BPM with the strum pattern from the Practice tab, one bar per chord.';
+  renderSongs();
+  syncPlayButtons();
+}
+
+/* --- song ideas: an ordered run of charts, each repeated reps times --- */
+function renderSongs(){
+  $('songList').innerHTML = state.songs.map(function(s){
+    const bars = barsOf({kind:'song', id:s.id}).length;
+    return '<button type="button" class="chartitem" data-id="' + s.id + '" aria-current="' +
+      (s.id === state.activeSong) + '"><span class="cname">' + escapeHtml(s.name) +
+      '</span><span class="cmeta">' + s.parts.length + (s.parts.length === 1 ? ' part · ' : ' parts · ') +
+      bars + (bars === 1 ? ' bar' : ' bars') + '</span></button>';
+  }).join('');
+
+  const s = activeSong();
+  $('activeSongName').textContent = s ? s.name : 'No song idea';
+  const host = $('parts');
+  if (!s || !s.parts.length){
+    host.innerHTML = '<span class="progempty">No parts yet — pick a chart below and add it.</span>';
+  } else {
+    host.innerHTML = s.parts.map(function(p, k){
+      const c = chartById(p.chart);
+      const chords = c && c.chords.length
+        ? c.chords.map(function(ch, i){ return '<span data-ci="' + i + '">' + chordLabel(ch.pc, ch.t) + '</span>'; }).join('')
+        : '<em>' + (c ? 'empty chart' : 'chart deleted') + '</em>';
+      const reps = p.reps || 1;
+      return '<div class="part" data-k="' + k + '">' +
+        '<div class="ptop"><span class="pname">' + escapeHtml(c ? c.name : 'Missing chart') + '</span>' +
+        '<span class="preps">×' + reps + '</span></div>' +
+        '<div class="pchords">' + chords + '</div>' +
+        '<div class="row">' +
+          '<button class="mini" data-pmv="-1" data-k="' + k + '" title="Move earlier" aria-label="Move part earlier"' +
+            (k === 0 ? ' disabled' : '') + '>' + ICON_LEFT + '</button>' +
+          '<button class="mini" data-pmv="1" data-k="' + k + '" title="Move later" aria-label="Move part later"' +
+            (k === s.parts.length - 1 ? ' disabled' : '') + '>' + ICON_RIGHT + '</button>' +
+          '<button class="mini" data-reps="-1" data-k="' + k + '" title="Play once fewer" aria-label="Fewer repeats"' +
+            (reps <= 1 ? ' disabled' : '') + '>' + ICON_MINUS + '</button>' +
+          '<button class="mini" data-reps="1" data-k="' + k + '" title="Play once more" aria-label="More repeats"' +
+            (reps >= 16 ? ' disabled' : '') + '>' + ICON_PLUS + '</button>' +
+          '<button class="mini del" data-pdel="' + k + '" title="Remove from song" aria-label="Remove part">' +
+            ICON_BIN + '</button>' +
+        '</div></div>';
+    }).join('');
+  }
+
+  const sel = $('partChart'), keep = sel.value;
+  sel.innerHTML = state.charts.map(function(c){
+    return '<option value="' + c.id + '">' + escapeHtml(c.name) + '</option>';
+  }).join('');
+  if (keep && chartById(keep)) sel.value = keep;
+  else if (activeChart()) sel.value = activeChart().id;
+
+  const bars = s ? barsOf({kind:'song', id:s.id}).length : 0;
+  const secs = Math.round(bars * 240 / state.bpm);
+  $('songSum').textContent = bars ? bars + ' bars · ' + Math.floor(secs / 60) + ':' + String(secs % 60).padStart(2, '0') +
+    ' at ' + state.bpm + ' BPM' : '';
+  ['delSong','renameSong','dupSong'].forEach(function(id){ $(id).disabled = !s; });
+  $('playSong').disabled = !bars;
+}
+
+/* Play buttons on both pages say Stop for whatever is actually playing. */
+function syncPlayButtons(){
+  const src = seq.on ? seq.source : null;
+  function set(id, playing, idle){
+    const b = $(id);
+    b.textContent = playing ? 'Stop' : idle;
+    b.classList.toggle('primary', !playing);
+  }
+  set('playPattern', seq.on, 'Play');
+  const c = activeChart(), s = activeSong();
+  set('playProg', !!(src && src.kind === 'chart' && c && src.id === c.id), 'Play');
+  set('playSong', !!(src && src.kind === 'song' && s && src.id === s.id), 'Play song');
+}
+
+function playFrom(src){
+  const same = seq.on && seq.source && seq.source.kind === src.kind && seq.source.id === src.id;
+  if (seq.on) seq.stop();
+  if (!same) seq.start(src);
+}
+
+function clearPlayingMarks(){
+  Array.prototype.forEach.call($('prog').children, function(el){
+    if (el.classList) el.classList.remove('playing');
+  });
+  Array.prototype.forEach.call($('parts').children, function(el){
+    if (el.classList) el.classList.remove('playing');
+  });
+  Array.prototype.forEach.call(document.querySelectorAll('#parts .pchords span.now'), function(el){
+    el.classList.remove('now');
+  });
+}
+
+/* Light up the chord being strummed: in the open chart, and in the song's part. */
+function markPlaying(cur){
+  const c = activeChart();
+  Array.prototype.forEach.call($('prog').children, function(el, i){
+    if (el.classList) el.classList.toggle('playing', !!c && cur.chart === c.id && i === cur.chordIdx);
+  });
+  const songOn = seq.source && seq.source.kind === 'song' && activeSong() && seq.source.id === activeSong().id;
+  Array.prototype.forEach.call($('parts').children, function(el, k){
+    if (!el.classList) return;
+    const on = songOn && k === cur.part;
+    el.classList.toggle('playing', on);
+    Array.prototype.forEach.call(el.querySelectorAll('.pchords span'), function(sp, i){
+      sp.classList.toggle('now', on && i === cur.chordIdx);
+    });
+  });
 }
 function escapeHtml(s){
   return String(s).replace(/[&<>"']/g, function(m){
@@ -1453,38 +1635,62 @@ function renderPattern(){
   $('bpm').value = state.bpm;
 }
 
+/* The bars a chart or song idea plays, one chord per bar, in order. Rebuilt every
+   bar, so edits made while it plays are heard on the next pass. */
+function barsOf(src){
+  const out = [];
+  function addChart(c, part){
+    if (!c) return;
+    c.chords.forEach(function(ch, i){ out.push({pc:ch.pc, t:ch.t, chart:c.id, idx:i, part:part}); });
+  }
+  if (src.kind === 'chart') addChart(chartById(src.id), -1);
+  else if (src.kind === 'song'){
+    const s = state.songs.find(function(x){ return x.id === src.id; });
+    if (s) s.parts.forEach(function(p, k){
+      for (let r = 0; r < (p.reps || 1); r++) addChart(chartById(p.chart), k);
+    });
+  }
+  return out;
+}
+
 const seq = {
   on:false, timer:null, raf:null,
   nextTime:0, step:0, bar:0, drawQueue:[],
-  start:function(){
+  /* null: Practice (the Chords-tab chord, or the active chart when following).
+     {kind:'chart'|'song', id}: started from the Charts page. */
+  source:null,
+  start:function(source){
     const ctx = audio.resume(); if (!ctx) return;
+    this.source = source || null;
     this.on = true; this.step = 0; this.bar = 0;
     this.nextTime = ctx.currentTime + 0.12;
     this.drawQueue = [];
-    $('playPattern').textContent = 'Stop';
-    $('playPattern').classList.remove('primary');
     this.timer = setInterval(this.schedule.bind(this), 25);
     this.draw();
+    syncPlayButtons();
   },
   stop:function(){
     this.on = false;
+    this.source = null;
     if (this.timer) clearInterval(this.timer);
     if (this.raf) cancelAnimationFrame(this.raf);
     this.timer = this.raf = null;
-    $('playPattern').textContent = 'Play';
-    $('playPattern').classList.add('primary');
     Array.prototype.forEach.call($('pattern').children, function(el){ el.classList.remove('now'); });
-    Array.prototype.forEach.call($('prog').children, function(el){
-      if (el.classList) el.classList.remove('playing');
-    });
+    clearPlayingMarks();
+    syncPlayButtons();
   },
   chordForBar:function(bar){
-    if (!state.follow) return {pc:state.rootPc, t:state.typeId, idx:-1};
+    if (this.source){
+      const bars = barsOf(this.source);
+      if (bars.length) return bars[bar % bars.length];
+      return {pc:state.rootPc, t:state.typeId, chart:null, idx:-1, part:-1};
+    }
+    if (!state.follow) return {pc:state.rootPc, t:state.typeId, chart:null, idx:-1, part:-1};
     const c = activeChart();
-    if (!c || !c.chords.length) return {pc:state.rootPc, t:state.typeId, idx:-1};
+    if (!c || !c.chords.length) return {pc:state.rootPc, t:state.typeId, chart:null, idx:-1, part:-1};
     const idx = bar % c.chords.length;
     const ch = c.chords[idx];
-    return {pc:ch.pc, t:ch.t, idx:idx};
+    return {pc:ch.pc, t:ch.t, chart:c.id, idx:idx, part:-1};
   },
   schedule:function(){
     const ctx = audio.ctx; if (!ctx) return;
@@ -1497,11 +1703,12 @@ const seq = {
       if (state.click && step % 2 === 0) audio.click(when, step === 0);
 
       if (state.sound && kind !== '-'){
-        const midis = (ch.pc === state.rootPc && ch.t === state.typeId && !state.follow)
+        const midis = (ch.pc === state.rootPc && ch.t === state.typeId && !state.follow && !this.source)
           ? currentMidis() : midisFor(ch.pc, ch.t);
         audio.strum(midis, tuning().inst, when, kind === 'U' ? 'up' : 'down', kind === 'x');
       }
-      this.drawQueue.push({t:when, step:step, chordIdx:ch.idx, label:chordLabel(ch.pc, ch.t), pc:ch.pc, tid:ch.t});
+      this.drawQueue.push({t:when, step:step, chordIdx:ch.idx, chart:ch.chart, part:ch.part, bar:bar,
+                           label:chordLabel(ch.pc, ch.t), pc:ch.pc, tid:ch.t});
 
       this.nextTime += eighth;
       this.step++;
@@ -1520,13 +1727,11 @@ const seq = {
           Array.prototype.forEach.call($('pattern').children, function(el, i){
             el.classList.toggle('now', i === cur.step);
           });
-          if (cur.chordIdx >= 0){
-            Array.prototype.forEach.call($('prog').children, function(el, i){
-              if (el.classList) el.classList.toggle('playing', i === cur.chordIdx);
-            });
-          }
-          $('nowPlaying').innerHTML = cur.label +
-            '<small>' + (state.follow ? 'bar ' + (self.bar + 1) + ' · following chart' : 'current chord') + '</small>';
+          markPlaying(cur);
+          const where = self.source
+            ? 'bar ' + (cur.bar + 1) + ' · ' + (self.source.kind === 'song' ? 'song idea' : 'chart')
+            : (state.follow ? 'bar ' + (cur.bar + 1) + ' · following chart' : 'current chord');
+          $('nowPlaying').innerHTML = cur.label + '<small>' + where + '</small>';
           renderPracDiagram(cur.pc, cur.tid);
         }
       }
@@ -2003,7 +2208,7 @@ function parseChord(text){
 /* =====================================================================
    Options: build info and update check
    ===================================================================== */
-const WEB_VERSION = '2.3';                 /* build.ps1 refuses to build if this differs from the APK's */
+const WEB_VERSION = '2.4';                 /* build.ps1 refuses to build if this differs from the APK's */
 const VERSION_URL = 'https://chord-shed.vercel.app/version.json';
 const SITE_URL    = 'https://chord-shed.vercel.app';
 
@@ -2046,6 +2251,7 @@ function renderOptions(){
   const chords = state.charts.reduce(function(a, x){ return a + x.chords.length; }, 0);
   $('dataRows').innerHTML =
     '<div class="row2"><dt>Saved charts</dt><dd>' + c + ' (' + chords + ' chords)</dd></div>' +
+    '<div class="row2"><dt>Song ideas</dt><dd>' + state.songs.length + '</dd></div>' +
     '<div class="row2"><dt>Stored on device</dt><dd>' +
       (b < 0 ? 'unavailable' : (b / 1024).toFixed(1) + ' KB') + '</dd></div>';
 
@@ -2205,6 +2411,7 @@ function showView(name){
     $('view-' + v).hidden = (v !== name);
   });
   if (name === 'options') renderOptions();
+  if (name === 'charts') renderCharts();     /* tempo and song length follow the Practice BPM */
   Array.prototype.forEach.call($('tabs').children, function(b){
     b.setAttribute('aria-selected', String(b.dataset.view === name));
   });
@@ -2429,7 +2636,17 @@ function init(){
   });
   $('delChart').addEventListener('click', function(){
     const c = activeChart(); if (!c) return;
-    if (!confirm('Delete "' + c.name + '"? This cannot be undone.')) return;
+    const inSongs = state.songs.filter(function(s){
+      return s.parts.some(function(p){ return p.chart === c.id; });
+    });
+    if (!confirm('Delete "' + c.name + '"?' +
+        (inSongs.length ? ' It is a part in ' + inSongs.length + ' song idea' + (inSongs.length > 1 ? 's' : '') +
+          ', and will be taken out of ' + (inSongs.length > 1 ? 'them' : 'it') + '.' : '') +
+        ' This cannot be undone.')) return;
+    if (seq.on && seq.source) seq.stop();
+    state.songs.forEach(function(s){
+      s.parts = s.parts.filter(function(p){ return p.chart !== c.id; });
+    });
     state.charts = state.charts.filter(function(x){ return x.id !== c.id; });
     if (!state.charts.length) state.charts = [{id:uid(), name:'My chart', chords:[]}];
     state.activeChart = state.charts[0].id;
@@ -2456,13 +2673,89 @@ function init(){
       strum();
     }
   });
+  /* Play from the Charts page stays on the Charts page. */
   $('playProg').addEventListener('click', function(){
-    state.follow = true;
-    $('followChart').checked = true;
-    showView('practice');
-    renderStage();
-    if (!seq.on) seq.start();
-    save();
+    const c = activeChart(); if (!c || !c.chords.length) return;
+    playFrom({kind:'chart', id:c.id});
+  });
+
+  /* --- song ideas --- */
+  $('newSong').addEventListener('click', function(){
+    const name = prompt('Name this song idea', 'Song idea ' + (state.songs.length + 1));
+    if (name === null) return;
+    const s = {id:uid(), name:(name.trim() || 'Untitled'), parts:[]};
+    state.songs.push(s);
+    state.activeSong = s.id;
+    renderSongs(); syncPlayButtons(); save();
+  });
+  $('songList').addEventListener('click', function(e){
+    const b = e.target.closest('.chartitem'); if (!b) return;
+    state.activeSong = b.dataset.id;
+    renderSongs(); syncPlayButtons(); save();
+  });
+  $('renameSong').addEventListener('click', function(){
+    const s = activeSong(); if (!s) return;
+    const name = prompt('Rename song idea', s.name);
+    if (name === null) return;
+    s.name = name.trim() || s.name;
+    renderSongs(); save();
+  });
+  $('dupSong').addEventListener('click', function(){
+    const s = activeSong(); if (!s) return;
+    const copy = {id:uid(), name:s.name + ' copy',
+                  parts:s.parts.map(function(p){ return {chart:p.chart, reps:p.reps || 1}; })};
+    state.songs.push(copy);
+    state.activeSong = copy.id;
+    renderSongs(); syncPlayButtons(); save();
+  });
+  $('delSong').addEventListener('click', function(){
+    const s = activeSong(); if (!s) return;
+    if (!confirm('Delete the song idea "' + s.name + '"? Its charts are kept. This cannot be undone.')) return;
+    if (seq.on && seq.source && seq.source.id === s.id) seq.stop();
+    state.songs = state.songs.filter(function(x){ return x.id !== s.id; });
+    if (!state.songs.length) state.songs = [{id:uid(), name:'Song idea 1', parts:[]}];
+    state.activeSong = state.songs[0].id;
+    renderSongs(); syncPlayButtons(); save();
+  });
+  $('addPart').addEventListener('click', function(){
+    const s = activeSong(), id = $('partChart').value;
+    if (!s || !chartById(id)) return;
+    s.parts.push({chart:id, reps:1});
+    renderSongs(); save();
+  });
+  $('playSong').addEventListener('click', function(){
+    const s = activeSong(); if (!s) return;
+    playFrom({kind:'song', id:s.id});
+  });
+  $('parts').addEventListener('click', function(e){
+    const s = activeSong(); if (!s) return;
+    const del = e.target.closest('[data-pdel]');
+    if (del){ s.parts.splice(+del.dataset.pdel, 1); renderSongs(); save(); return; }
+    const mv = e.target.closest('[data-pmv]');
+    if (mv){
+      const i = +mv.dataset.k, j = i + (+mv.dataset.pmv);
+      if (j >= 0 && j < s.parts.length){
+        const tmp = s.parts[i]; s.parts[i] = s.parts[j]; s.parts[j] = tmp;
+        renderSongs(); save();
+      }
+      return;
+    }
+    const rp = e.target.closest('[data-reps]');
+    if (rp){
+      const p = s.parts[+rp.dataset.k];
+      p.reps = Math.min(16, Math.max(1, (p.reps || 1) + (+rp.dataset.reps)));
+      renderSongs(); save();
+      return;
+    }
+    /* tapping a part opens its chart in the editor above */
+    const part = e.target.closest('.part');
+    if (part){
+      const p = s.parts[+part.dataset.k];
+      if (p && chartById(p.chart)){
+        state.activeChart = p.chart;
+        renderCharts(); save();
+      }
+    }
   });
 
   /* --- options --- */
