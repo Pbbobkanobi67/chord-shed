@@ -258,7 +258,38 @@ input[type=range]{flex:1 1 150px; min-width:120px; accent-color:var(--accent)}
 .progitem .mini:disabled{opacity:.3; cursor:default}
 .progitem .mini:disabled:hover{color:var(--ink-3); border-color:var(--line)}
 .progempty{display:flex; align-items:center; color:var(--ink-3); font-size:13px; font-style:italic}
-.songsgrid{margin-top:22px}
+.songsgrid + .chartsgrid{margin-top:22px}
+.keyline{margin:2px 0 4px; font-size:13px; color:var(--ink-2)}
+.keyline b{color:var(--ink)}
+.keyline .warn{color:var(--ochre)}
+.subhead{display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin:14px 0 8px}
+.subhead h3{margin:0; font:600 12px/1.2 "IBM Plex Sans",sans-serif; letter-spacing:.06em; text-transform:uppercase;
+  color:var(--ink-3)}
+.subhead h3 span{color:var(--accent-ink); text-transform:none; letter-spacing:0; font-size:13px}
+.subhead select{margin-left:auto; max-width:240px}
+.sections{display:flex; gap:8px; flex-wrap:wrap}
+.section{display:flex; flex-direction:column; gap:6px; min-width:150px; max-width:100%; padding:9px 10px;
+  border:1px solid var(--line); border-radius:10px; background:var(--paper); cursor:pointer}
+.section.sel{border-color:var(--accent); box-shadow:0 0 0 1px var(--accent) inset}
+.section .shead{display:flex; align-items:center; gap:6px}
+.section .sname{flex:1 1 auto; font:600 13px/1.2 "IBM Plex Sans",sans-serif; background:none; border:0; padding:0;
+  color:var(--ink); cursor:text; text-align:left}
+.section .sname:hover{text-decoration:underline dotted}
+.section .sbar{font:400 10.5px/1 "IBM Plex Mono",monospace; color:var(--ink-3)}
+.section .chips{margin-top:0; min-height:30px}
+.section .chip .cl{font-size:15px; padding:3px 6px 3px 8px}
+.section .chip .cx{width:22px}
+.section .chip.now{border-color:var(--accent); background:var(--accent-soft)}
+.chip.off .cl{text-decoration:underline wavy var(--ochre); text-underline-offset:4px}
+.section .sdel{display:grid; place-items:center; width:24px; height:24px; border-radius:6px; border:1px solid var(--line);
+  background:var(--panel); color:var(--ink-3); cursor:pointer; padding:0}
+.section .sdel svg{width:13px; height:13px}
+.section .sdel:hover{color:var(--ochre); border-color:var(--ochre)}
+.palette{margin-top:4px; padding:10px 12px 12px; border-radius:10px; background:var(--panel); border:1px solid var(--line)}
+.palette .subhead{margin-top:0}
+.chip .cx.add{color:var(--accent)}
+.chip .cx.add:hover{color:var(--accent-ink); background:var(--accent-soft)}
+.arradd{display:flex; gap:6px; flex-wrap:wrap}
 .strip{margin-top:14px; padding-top:12px; border-top:1px solid var(--line)}
 .striphead{display:flex; align-items:center; gap:8px; flex-wrap:wrap}
 .striphead select{flex:1 1 140px; min-width:0; max-width:260px}
@@ -603,33 +634,6 @@ footer .colophon{flex:1 1 320px; display:flex; flex-direction:column; gap:2px}
 
   <!-- ============ CHARTS ============ -->
   <section class="view" id="view-charts" hidden>
-    <div class="chartsgrid">
-      <div class="card" style="padding:16px">
-        <div class="sechead" style="margin-bottom:10px">
-          <h2>Your charts</h2>
-          <button type="button" class="btn sm" id="newChart">New</button>
-        </div>
-        <div class="chartlist" id="chartList"></div>
-      </div>
-
-      <div class="card" style="padding:16px">
-        <div class="sechead">
-          <h2 id="activeChartName">Chart</h2>
-          <div class="acts">
-            <button type="button" class="btn sm" id="playProg">Play</button>
-            <button type="button" class="btn sm" id="renameChart">Rename</button>
-            <button type="button" class="btn sm" id="dupChart">Duplicate</button>
-            <button type="button" class="btn sm" id="delChart">Delete</button>
-          </div>
-        </div>
-        <div class="prog" id="prog"></div>
-        <p class="hint" style="margin:12px 0 0">
-          Add chords from the Chords tab. Tap a chord here to load its shape. Use the arrows to move it, the bin to remove it.
-        </p>
-        <p class="hint" style="margin:6px 0 0" id="chartTempo"></p>
-      </div>
-    </div>
-
     <div class="chartsgrid songsgrid">
       <div class="card" style="padding:16px">
         <div class="sechead" style="margin-bottom:10px">
@@ -653,18 +657,58 @@ footer .colophon{flex:1 1 320px; display:flex; flex-direction:column; gap:2px}
             <button type="button" class="btn sm" id="delSong">Delete</button>
           </div>
         </div>
+        <p class="keyline" id="songKey"></p>
+
+        <div class="subhead"><h3>Parts</h3>
+          <button type="button" class="btn sm" id="addSection">+ Part</button></div>
+        <div class="sections" id="sections"></div>
+
+        <div class="palette">
+          <div class="subhead"><h3>Add chords to <span id="palTarget">Verse</span></h3>
+            <select id="palSource" aria-label="Where the chords come from"></select></div>
+          <div class="chips" id="palChips"></div>
+          <p class="hint" id="palHint" style="margin:6px 0 0"></p>
+        </div>
+
+        <div class="subhead"><h3>Arrangement</h3>
+          <button type="button" class="btn sm" id="suggestArr">Suggest</button></div>
         <div class="parts" id="parts"></div>
         <div class="addpart">
-          <select id="partChart" aria-label="Chart to add as a part"></select>
-          <button type="button" class="btn sm" id="addPart">Add part</button>
+          <span class="tiny">Add to the end:</span>
+          <span id="arrAdd" class="arradd"></span>
           <span class="partsum" id="songSum"></span>
         </div>
-        <p class="hint" style="margin:10px 0 0">
-          A song idea is a run of your charts — verse, chorus, bridge — each played as many times as you set.
-          Tap a part to open its chart above.
-        </p>
+        <p class="hint" id="arrHint" style="margin:10px 0 0"></p>
       </div>
     </div>
+    <div class="chartsgrid">
+      <div class="card" style="padding:16px">
+        <div class="sechead" style="margin-bottom:10px">
+          <h2>Your charts</h2>
+          <button type="button" class="btn sm" id="newChart">New</button>
+        </div>
+        <div class="chartlist" id="chartList"></div>
+      </div>
+
+      <div class="card" style="padding:16px">
+        <div class="sechead">
+          <h2 id="activeChartName">Chart</h2>
+          <div class="acts">
+            <button type="button" class="btn sm" id="playProg">Play</button>
+            <button type="button" class="btn sm" id="renameChart">Rename</button>
+            <button type="button" class="btn sm" id="dupChart">Duplicate</button>
+            <button type="button" class="btn sm" id="delChart">Delete</button>
+          </div>
+        </div>
+        <div class="prog" id="prog"></div>
+        <p class="hint" style="margin:12px 0 0">
+          Add chords from the Chords tab. Tap a chord here to load its shape. Use the arrows to move it, the bin to remove it.
+          Charts also show up as palettes when you build a song idea above.
+        </p>
+        <p class="hint" style="margin:6px 0 0" id="chartTempo"></p>
+      </div>
+    </div>
+
   </section>
 
   <!-- ============ OPTIONS ============ -->
@@ -1220,7 +1264,7 @@ const state = {
   lefty:false, sound:true,
   view:'chords',
   charts:[], activeChart:null,
-  songs:[], activeSong:null,
+  songs:[], activeSong:null, palSource:'key',
   keyRoot:0, keyMode:'major',
   bpm:92, pattern:PRESETS[0].p.slice(), click:true, follow:false
 };
@@ -1238,6 +1282,14 @@ function activeChart(){
 function activeSong(){
   return state.songs.find(function(s){ return s.id === state.activeSong; }) || state.songs[0] || null;
 }
+/* A new song starts with an empty Verse to drop chords into. */
+function newSong(name){
+  const v = {id:uid(), name:'Verse', chords:[]};
+  return {id:uid(), name:name, sections:[v], order:[{s:v.id, reps:1}]};
+}
+function sectionById(song, id){
+  return song ? song.sections.find(function(x){ return x.id === id; }) || null : null;
+}
 function chartById(id){ return state.charts.find(function(c){ return c.id === id; }) || null; }
 function uid(){ return 'c' + Date.now().toString(36) + Math.random().toString(36).slice(2,6); }
 
@@ -1246,7 +1298,7 @@ function save(){
     localStorage.setItem('chordshed', JSON.stringify({
       v:2, inst:state.inst, tuningId:state.tuningId, lefty:state.lefty, sound:state.sound,
       charts:state.charts, activeChart:state.activeChart,
-      songs:state.songs, activeSong:state.activeSong,
+      songs:state.songs, activeSong:state.activeSong, palSource:state.palSource,
       keyRoot:state.keyRoot, keyMode:state.keyMode, view:state.view,
       bpm:state.bpm, pattern:state.pattern, click:state.click, follow:state.follow
     }));
@@ -1288,10 +1340,29 @@ function load(){
   }
   if (!activeChart() && state.charts.length) state.activeChart = state.charts[0].id;
 
-  /* song ideas: [{id, name, parts:[{chart:<chart id>, reps:n}]}] - absent before 2.4 */
-  if (Array.isArray(o.songs)) state.songs = o.songs.filter(function(x){ return x && Array.isArray(x.parts); });
-  if (!state.songs.length) state.songs = [{id:uid(), name:'Song idea 1', parts:[]}];
+  /* Song ideas (2.6+): {id, name, sections:[{id, name, chords:[{pc,t}]}], order:[{s:<section id>, reps}]}.
+     2.4-2.5 kept {parts:[{chart, reps}]} pointing at charts; each chart a song used
+     becomes one section holding a copy of its chords, so later chart edits no
+     longer change the song. */
+  if (Array.isArray(o.songs)) state.songs = o.songs.map(function(x){
+    if (!x || typeof x !== 'object') return null;
+    if (Array.isArray(x.sections) && Array.isArray(x.order)) return x;
+    if (!Array.isArray(x.parts)) return null;
+    const byChart = {}, sections = [], order = [];
+    x.parts.forEach(function(p){
+      const c = (o.charts || []).find(function(ch){ return ch.id === p.chart; });
+      if (!c) return;
+      if (!byChart[c.id]){
+        byChart[c.id] = uid();
+        sections.push({id:byChart[c.id], name:c.name, chords:c.chords.map(function(ch){ return {pc:ch.pc, t:ch.t}; })});
+      }
+      order.push({s:byChart[c.id], reps:p.reps || 1});
+    });
+    return {id:x.id || uid(), name:x.name || 'Song idea', sections:sections, order:order};
+  }).filter(Boolean);
+  if (!state.songs.length) state.songs = [newSong('Song idea 1')];
   state.activeSong = o.activeSong;
+  if (typeof o.palSource === 'string') state.palSource = o.palSource;
   if (!activeSong()) state.activeSong = state.songs[0].id;
 }
 
@@ -1494,6 +1565,91 @@ const KEY_SHAPES = {
   minor:{steps:[0,2,3,5,7,8,10], quals:['min','dim','maj','min','min','maj','maj'],
          labels:['home','dim','major','minor','minor','major','major']}
 };
+/* =====================================================================
+   Theory: which key a set of chords is in, what fits, what could come next.
+   A chord fits a key when every note in it is in the key's scale, which covers
+   sevenths, sus chords and the rest without special cases.
+   ===================================================================== */
+const theory = {
+  scale:function(key){
+    const sc = KEY_SHAPES[key.mode].steps.map(function(st){ return (key.pc + st) % 12; });
+    /* minor keys borrow the raised 7th (G# in A minor): it is what makes E -> Am pull home */
+    if (key.mode === 'minor') sc.push((key.pc + 11) % 12);
+    return sc;
+  },
+  notes:function(ch){
+    return TYPE_BY_ID[ch.t].iv.map(function(iv){ return (ch.pc + iv) % 12; });
+  },
+  fits:function(ch, key){
+    const sc = this.scale(key);
+    return this.notes(ch).every(function(n){ return sc.indexOf(n) >= 0; });
+  },
+  keyName:function(key){
+    return ROOTS.find(function(r){ return r.pc === key.pc; }).name + (key.mode === 'major' ? ' major' : ' minor');
+  },
+  /* Best key for a chord list, or null when there is nothing to go on. A major key and
+     its relative minor share every note, so the tiebreak is which chord the music
+     starts and ends on, which is how listeners hear "home". */
+  detect:function(chords){
+    if (!chords.length) return null;
+    let best = null;
+    for (let pc = 0; pc < 12; pc++){
+      ['major','minor'].forEach(function(mode){
+        const key = {pc:pc, mode:mode}, sc = theory.scale(key);
+        const tonicT = mode === 'major' ? 'maj' : 'min';
+        let score = 0, fit = 0;
+        chords.forEach(function(ch){
+          const out = theory.notes(ch).filter(function(n){ return sc.indexOf(n) < 0; }).length;
+          if (!out){ score += 2; fit++; } else score -= out;
+          if (ch.pc === pc) score += TYPE_BY_ID[ch.t].iv[1] === TYPE_BY_ID[tonicT].iv[1] ? 0.6 : 0.2;
+        });
+        const first = chords[0], last = chords[chords.length - 1];
+        if (first.pc === pc) score += 1.5;
+        if (last.pc === pc) score += 1.5;
+        if (mode === 'major') score += 0.1;          /* a dead heat goes to major */
+        if (!best || score > best.score) best = {pc:pc, mode:mode, score:score, fit:fit, total:chords.length};
+      });
+    }
+    return best;
+  },
+  /* the seven chords of the key, as {pc, t, label} */
+  chordsOf:function(key){
+    const k = KEY_SHAPES[key.mode];
+    return k.steps.map(function(st, i){ return {pc:(key.pc + st) % 12, t:k.quals[i], label:k.labels[i]}; });
+  },
+  /* Common next moves by scale degree (0 = home). Taken from how pop, folk and rock
+     songs usually move; the first entries are the strongest. */
+  NEXT:{
+    major:{0:[3,4,5,1], 1:[4,3,6], 2:[5,3], 3:[4,0,1,5], 4:[0,5,3], 5:[3,1,4], 6:[0,2]},
+    minor:{0:[5,3,6,4], 1:[4,0], 2:[5,3,6], 3:[4,0,6], 4:[0,5], 5:[6,2,3], 6:[0,2,5]}
+  },
+  next:function(last, key){
+    const diat = this.chordsOf(key);
+    if (!last) return [diat[0], diat[5], diat[3]].filter(Boolean);     /* start on home, or close to it */
+    const deg = diat.findIndex(function(d){ return d.pc === last.pc; });
+    const picks = (deg >= 0 ? this.NEXT[key.mode][deg] : [0, 4]).map(function(i){ return diat[i]; });
+    /* in a minor key a MAJOR five pulls home hardest (E to Am) */
+    if (key.mode === 'minor' && (deg === 3 || deg === 5 || deg === 6 || deg < 0)){
+      picks.push({pc:(key.pc + 7) % 12, t:'maj', label:'strong pull home'});
+    }
+    return picks;
+  }
+};
+
+/* Song shapes Suggest cycles through. A trailing ? means "only if the song has one". */
+const ARR_TEMPLATES = [
+  {name:'Verse–chorus', roles:['intro?','verse','chorus','verse','chorus','bridge?','chorus','outro?'],
+   why:'the shape most songs use: the chorus comes back three times, with a bridge for contrast before the last one'},
+  {name:'Short and sweet', roles:['verse','chorus','verse','chorus'],
+   why:'two rounds of verse and chorus, good for sketching an idea quickly'},
+  {name:'Slow build', roles:['intro?','verse','verse','pre?','chorus','verse','pre?','chorus','chorus','outro?'],
+   why:'two verses before the first chorus, so the chorus lands harder; doubled at the end'},
+  {name:'Folk', roles:['verse','verse','chorus','verse','verse','chorus'],
+   why:'verses carry the story in pairs, the chorus answers'}
+];
+const ROLE_RX = {intro:/intro/i, verse:/verse/i, pre:/pre[\s-]?chorus|pre\b/i, chorus:/chorus|refrain|hook/i,
+                 bridge:/bridge|middle/i, outro:/outro|ending|coda/i};
+
 function renderKey(){
   const k = KEY_SHAPES[state.keyMode];
   $('romanRow').innerHTML = k.steps.map(function(st, i){
@@ -1570,61 +1726,182 @@ function renderChordStrip(fresh){
   $('stripPlay').disabled = !c || !c.chords.length;
 }
 
-/* --- song ideas: an ordered run of charts, each repeated reps times --- */
+/* --- song ideas: parts that hold their own chords, and the order they play in --- */
+let selSection = null;      /* id of the part the palette adds chords to */
+let arrNote = '';           /* what the last Suggest did, shown under the arrangement */
+
+/* The song's key, judged from its chords in the order they play (falling back to the
+   parts themselves while the arrangement is empty). */
+function songKey(s){
+  const played = barsOf({kind:'song', id:s.id});
+  if (played.length) return theory.detect(played);
+  const all = [];
+  s.sections.forEach(function(sec){ sec.chords.forEach(function(ch){ all.push(ch); }); });
+  return theory.detect(all);
+}
+
+/* What the palette offers, as [{pc, t, tip}] plus a line saying where they came from. */
+function paletteChords(s, key, sec){
+  const src = state.palSource || 'key';
+  const k = key || {pc:state.keyRoot, mode:state.keyMode};
+  if (src === 'next'){
+    const last = sec && sec.chords.length ? sec.chords[sec.chords.length - 1] : null;
+    return {list:theory.next(last, k).map(function(c){ return {pc:c.pc, t:c.t, tip:c.label}; }),
+            hint:last ? 'Chords that often follow ' + chordLabel(last.pc, last.t) + ' in ' + theory.keyName(k) + ', strongest first.'
+                      : 'Good chords to start a part on in ' + theory.keyName(k) + '.'};
+  }
+  if (src.indexOf('chart:') === 0){
+    const c = chartById(src.slice(6));
+    if (c) return {list:c.chords.map(function(ch){ return {pc:ch.pc, t:ch.t, tip:''}; }),
+                   hint:'Chords from your chart \u201c' + c.name + '\u201d.'};
+  }
+  return {list:theory.chordsOf(k).map(function(c){ return {pc:c.pc, t:c.t, tip:c.label}; }),
+          hint:'The seven chords of ' + theory.keyName(k) + (key ? ', the key your song is in.' : '.') +
+               ' A wavy underline means outside the key.'};
+}
+
 function renderSongs(){
   $('songList').innerHTML = state.songs.map(function(s){
-    const bars = barsOf({kind:'song', id:s.id}).length;
+    const bars = barsOf({kind:'song', id:s.id}).length, n = s.sections.length;
     return '<button type="button" class="chartitem" data-id="' + s.id + '" aria-current="' +
       (s.id === state.activeSong) + '"><span class="cname">' + escapeHtml(s.name) +
-      '</span><span class="cmeta">' + s.parts.length + (s.parts.length === 1 ? ' part · ' : ' parts · ') +
+      '</span><span class="cmeta">' + n + (n === 1 ? ' part \u00b7 ' : ' parts \u00b7 ') +
       bars + (bars === 1 ? ' bar' : ' bars') + '</span></button>';
   }).join('');
 
   const s = activeSong();
   $('activeSongName').textContent = s ? s.name : 'No song idea';
-  const host = $('parts');
-  if (!s || !s.parts.length){
-    host.innerHTML = '<span class="progempty">No parts yet — pick a chart below and add it.</span>';
-  } else {
-    host.innerHTML = s.parts.map(function(p, k){
-      const c = chartById(p.chart);
-      const chords = c && c.chords.length
-        ? c.chords.map(function(ch, i){ return '<span data-ci="' + i + '">' + chordLabel(ch.pc, ch.t) + '</span>'; }).join('')
-        : '<em>' + (c ? 'empty chart' : 'chart deleted') + '</em>';
-      const reps = p.reps || 1;
-      return '<div class="part" data-k="' + k + '">' +
-        '<div class="ptop"><span class="pname">' + escapeHtml(c ? c.name : 'Missing chart') + '</span>' +
-        '<span class="preps">×' + reps + '</span></div>' +
-        '<div class="pchords">' + chords + '</div>' +
-        '<div class="row">' +
-          '<button class="mini" data-pmv="-1" data-k="' + k + '" title="Move earlier" aria-label="Move part earlier"' +
-            (k === 0 ? ' disabled' : '') + '>' + ICON_LEFT + '</button>' +
-          '<button class="mini" data-pmv="1" data-k="' + k + '" title="Move later" aria-label="Move part later"' +
-            (k === s.parts.length - 1 ? ' disabled' : '') + '>' + ICON_RIGHT + '</button>' +
-          '<button class="mini" data-reps="-1" data-k="' + k + '" title="Play once fewer" aria-label="Fewer repeats"' +
-            (reps <= 1 ? ' disabled' : '') + '>' + ICON_MINUS + '</button>' +
-          '<button class="mini" data-reps="1" data-k="' + k + '" title="Play once more" aria-label="More repeats"' +
-            (reps >= 16 ? ' disabled' : '') + '>' + ICON_PLUS + '</button>' +
-          '<button class="mini del" data-pdel="' + k + '" title="Remove from song" aria-label="Remove part">' +
-            ICON_BIN + '</button>' +
-        '</div></div>';
-    }).join('');
+  if (!s) return;
+  const key = songKey(s);
+
+  /* key line */
+  if (!key) $('songKey').innerHTML = 'Add some chords and Chord Shed will work out the key.';
+  else {
+    const seen = {}, off = [];
+    s.sections.forEach(function(sec){ sec.chords.forEach(function(ch){
+      const l = chordLabel(ch.pc, ch.t);
+      if (!seen[l] && !theory.fits(ch, key)){ seen[l] = 1; off.push(l); }
+    }); });
+    $('songKey').innerHTML = 'Sounds like <b>' + theory.keyName(key) + '</b>' + (off.length
+      ? ' \u00b7 <span class="warn">' + off.join(', ') + (off.length === 1 ? ' is' : ' are') +
+        ' outside the key</span> \u2014 fine if you want that colour.'
+      : ' \u2014 every chord fits.');
   }
 
-  const sel = $('partChart'), keep = sel.value;
-  sel.innerHTML = state.charts.map(function(c){
-    return '<option value="' + c.id + '">' + escapeHtml(c.name) + '</option>';
-  }).join('');
-  if (keep && chartById(keep)) sel.value = keep;
-  else if (activeChart()) sel.value = activeChart().id;
+  /* parts */
+  if (!sectionById(s, selSection)) selSection = s.sections.length ? s.sections[0].id : null;
+  $('sections').innerHTML = s.sections.length ? s.sections.map(function(sec){
+    const chips = sec.chords.length ? sec.chords.map(function(ch, i){
+      const off = key && !theory.fits(ch, key);
+      return '<span class="chip' + (off ? ' off' : '') + '"' + (off ? ' title="Outside ' + theory.keyName(key) + '"' : '') + '>' +
+        '<button type="button" class="cl" data-sec="' + sec.id + '" data-i="' + i + '" title="Hear it">' + chordLabel(ch.pc, ch.t) + '</button>' +
+        '<button type="button" class="cx" data-secdel="' + sec.id + '" data-i="' + i + '" title="Remove" aria-label="Remove ' +
+          chordLabel(ch.pc, ch.t) + '">' + ICON_BIN + '</button></span>';
+    }).join('') : '<span class="empty">Empty \u2014 add chords from below.</span>';
+    return '<div class="section' + (sec.id === selSection ? ' sel' : '') + '" data-id="' + sec.id + '">' +
+      '<div class="shead"><button type="button" class="sname" data-rename="' + sec.id + '" title="Rename">' + escapeHtml(sec.name) + '</button>' +
+      '<span class="sbar">' + sec.chords.length + (sec.chords.length === 1 ? ' bar' : ' bars') + '</span>' +
+      '<button type="button" class="sdel" data-sdel="' + sec.id + '" title="Delete this part" aria-label="Delete ' +
+        escapeHtml(sec.name) + '">' + ICON_BIN + '</button></div>' +
+      '<div class="chips">' + chips + '</div></div>';
+  }).join('') : '<span class="progempty">No parts yet \u2014 press + Part.</span>';
 
-  const bars = s ? barsOf({kind:'song', id:s.id}).length : 0;
+  /* palette */
+  const sec = sectionById(s, selSection);
+  $('palTarget').textContent = sec ? sec.name : '\u2014';
+  const ps = $('palSource');
+  ps.innerHTML = '<option value="key">Chords in ' + escapeHtml(theory.keyName(key || {pc:state.keyRoot, mode:state.keyMode})) + '</option>' +
+    '<option value="next">What could come next</option>' +
+    state.charts.map(function(c){ return '<option value="chart:' + c.id + '">Chart: ' + escapeHtml(c.name) + '</option>'; }).join('');
+  if (!ps.querySelector('option[value="' + (state.palSource || 'key') + '"]')) state.palSource = 'key';
+  ps.value = state.palSource || 'key';
+  const pal = paletteChords(s, key, sec);
+  paletteNow = pal.list;
+  $('palChips').innerHTML = pal.list.length ? pal.list.map(function(c, i){
+    const off = key && !theory.fits(c, key);
+    return '<span class="chip' + (off ? ' off' : '') + '"' + (c.tip ? ' title="' + escapeHtml(c.tip) + '"' : '') + '>' +
+      '<button type="button" class="cl" data-pi="' + i + '" title="Hear it">' + chordLabel(c.pc, c.t) + '</button>' +
+      '<button type="button" class="cx add" data-padd="' + i + '" title="Add to ' + escapeHtml(sec ? sec.name : 'a part') +
+        '" aria-label="Add ' + chordLabel(c.pc, c.t) + '"' + (sec ? '' : ' disabled') + '>' + ICON_PLUS + '</button></span>';
+  }).join('') : '<span class="empty">That chart is empty.</span>';
+  $('palHint').textContent = sec ? pal.hint + ' Tap a name to hear it, + to add it to ' + sec.name + '.' : 'Make a part first.';
+
+  /* arrangement */
+  const host = $('parts');
+  host.innerHTML = s.order.length ? s.order.map(function(o, k){
+    const sc = sectionById(s, o.s);
+    const chords = sc && sc.chords.length
+      ? sc.chords.map(function(ch, i){ return '<span data-ci="' + i + '">' + chordLabel(ch.pc, ch.t) + '</span>'; }).join('')
+      : '<em>no chords yet</em>';
+    const reps = o.reps || 1;
+    return '<div class="part" data-k="' + k + '">' +
+      '<div class="ptop"><span class="pname">' + escapeHtml(sc ? sc.name : 'Deleted part') + '</span>' +
+      '<span class="preps">\u00d7' + reps + '</span></div>' +
+      '<div class="pchords">' + chords + '</div>' +
+      '<div class="row">' +
+        '<button class="mini" data-pmv="-1" data-k="' + k + '" title="Move earlier" aria-label="Move earlier"' +
+          (k === 0 ? ' disabled' : '') + '>' + ICON_LEFT + '</button>' +
+        '<button class="mini" data-pmv="1" data-k="' + k + '" title="Move later" aria-label="Move later"' +
+          (k === s.order.length - 1 ? ' disabled' : '') + '>' + ICON_RIGHT + '</button>' +
+        '<button class="mini" data-reps="-1" data-k="' + k + '" title="Play once fewer" aria-label="Fewer repeats"' +
+          (reps <= 1 ? ' disabled' : '') + '>' + ICON_MINUS + '</button>' +
+        '<button class="mini" data-reps="1" data-k="' + k + '" title="Play once more" aria-label="More repeats"' +
+          (reps >= 16 ? ' disabled' : '') + '>' + ICON_PLUS + '</button>' +
+        '<button class="mini del" data-pdel="' + k + '" title="Take out of the arrangement" aria-label="Remove">' +
+          ICON_BIN + '</button>' +
+      '</div></div>';
+  }).join('') : '<span class="progempty">Nothing to play yet \u2014 add parts below, or press Suggest.</span>';
+  $('arrAdd').innerHTML = s.sections.map(function(sc){
+    return '<button type="button" class="btn sm" data-addsec="' + sc.id + '">+ ' + escapeHtml(sc.name) + '</button>';
+  }).join('');
+  $('arrHint').textContent = arrNote ||
+    'Parts play in this order, each as many times as its \u00d7 says. Changing a part\u2019s chords changes it everywhere it plays.';
+
+  const bars = barsOf({kind:'song', id:s.id}).length;
   const secs = Math.round(bars * 240 / state.bpm);
-  $('songSum').textContent = bars ? bars + ' bars · ' + Math.floor(secs / 60) + ':' + String(secs % 60).padStart(2, '0') +
+  $('songSum').textContent = bars ? bars + ' bars \u00b7 ' + Math.floor(secs / 60) + ':' + String(secs % 60).padStart(2, '0') +
     ' at ' + state.bpm + ' BPM' : '';
   ['delSong','renameSong','dupSong'].forEach(function(id){ $(id).disabled = !s; });
-  $('shareSong').disabled = !s || !s.parts.length;
+  $('shareSong').disabled = !bars;
   $('playSong').disabled = !bars;
+  $('suggestArr').disabled = !s.sections.length;
+}
+let paletteNow = [];        /* the chords the palette is showing, for its click handler */
+
+/* Fill the arrangement from the next template, using the parts this song has.
+   Parts are matched to roles by name (Verse, Chorus, Bridge...); the rest are
+   taken in order as verse, chorus, bridge. */
+let arrNext = 0;
+function suggestArrangement(){
+  const s = activeSong(); if (!s || !s.sections.length) return;
+  const role = {}, used = {};
+  ['intro','pre','verse','chorus','bridge','outro'].forEach(function(r){
+    const sec = s.sections.find(function(x){ return !used[x.id] && ROLE_RX[r].test(x.name); });
+    if (sec){ role[r] = sec.id; used[sec.id] = 1; }
+  });
+  s.sections.forEach(function(x){
+    if (used[x.id]) return;
+    const free = ['verse','chorus','bridge'].find(function(r){ return !role[r]; });
+    if (free){ role[free] = x.id; used[x.id] = 1; }
+  });
+  if (s.sections.length === 1){
+    s.order = [{s:s.sections[0].id, reps:4}];
+    arrNote = 'With one part there is nothing to arrange yet, so it plays four times. Add a Chorus with + Part for real shapes.';
+  } else {
+    const tpl = ARR_TEMPLATES[arrNext % ARR_TEMPLATES.length];
+    arrNext++;
+    const order = [];
+    tpl.roles.forEach(function(r){
+      const opt = r.slice(-1) === '?', id = role[opt ? r.slice(0, -1) : r];
+      if (!id) return;
+      const last = order[order.length - 1];
+      if (last && last.s === id) last.reps++;            /* Verse, Verse -> Verse x2 */
+      else order.push({s:id, reps:1});
+    });
+    s.order = order;
+    arrNote = 'Suggested: ' + tpl.name + ' \u2014 ' + tpl.why + '. Press Suggest again for another shape.';
+  }
+  renderSongs(); save();
 }
 
 /* Play buttons on both pages say Stop for whatever is actually playing. */
@@ -1666,31 +1943,32 @@ function b64urlDecode(str){
   return new TextDecoder().decode(Uint8Array.from(bin, function(ch){ return ch.charCodeAt(0); }));
 }
 
+/* c = the song's parts with their chords, p = the arrangement as [part index, reps].
+   2.5 links used the same shape for [chart, chords] and parts, so they still open. */
 function songPayload(s){
-  const used = [], index = {};
-  const parts = [];
-  s.parts.forEach(function(p){
-    const c = chartById(p.chart); if (!c) return;
-    if (!(c.id in index)){
-      index[c.id] = used.length;
-      const flat = [];
-      c.chords.forEach(function(ch){ flat.push(ch.pc, ch.t); });
-      used.push([c.name, flat]);
-    }
-    parts.push([index[c.id], p.reps || 1]);
+  const index = {};
+  const c = s.sections.map(function(sec, i){
+    index[sec.id] = i;
+    const flat = [];
+    sec.chords.forEach(function(ch){ flat.push(ch.pc, ch.t); });
+    return [sec.name, flat];
   });
-  return {v:1, n:s.name, c:used, p:parts};
+  const p = s.order.filter(function(o){ return o.s in index; })
+                   .map(function(o){ return [index[o.s], o.reps || 1]; });
+  return {v:1, n:s.name, c:c, p:p};
 }
 
 function songLink(s){ return SITE_URL + '/#song=' + b64urlEncode(JSON.stringify(songPayload(s))); }
 
 function songText(s){
-  const lines = s.parts.map(function(p){
-    const c = chartById(p.chart); if (!c) return null;
-    const chords = c.chords.map(function(ch){ return chordLabel(ch.pc, ch.t); }).join('  ');
-    return c.name + ((p.reps || 1) > 1 ? ' ×' + p.reps : '') + ':  ' + (chords || '(empty)');
+  const lines = s.order.map(function(o){
+    const sec = sectionById(s, o.s); if (!sec) return null;
+    const chords = sec.chords.map(function(ch){ return chordLabel(ch.pc, ch.t); }).join('  ');
+    return sec.name + ((o.reps || 1) > 1 ? ' ×' + o.reps : '') + ':  ' + (chords || '(empty)');
   }).filter(Boolean);
-  return '“' + s.name + '” — a song idea from Chord Shed\n\n' + lines.join('\n') +
+  const key = songKey(s);
+  return '“' + s.name + '” — a song idea from Chord Shed' + (key ? ', in ' + theory.keyName(key) : '') +
+         '\n\n' + lines.join('\n') +
          '\n\nOpen it in Chord Shed:\n' + songLink(s);
 }
 
@@ -1729,9 +2007,8 @@ let pendingImport = null;
 function offerImport(data){
   pendingImport = data;
   $('impTitle').textContent = 'Add the shared song idea “' + data.name + '”?';
-  $('impMsg').textContent = data.parts.length + (data.parts.length === 1 ? ' part' : ' parts') + ' from ' +
-    data.charts.map(function(c){ return c.name; }).join(', ') +
-    '. It is added as new copies — none of your charts change.';
+  $('impMsg').textContent = 'Parts: ' + data.charts.map(function(c){ return c.name; }).join(', ') + '. ' +
+    'It is added as a new song idea — nothing of yours changes.';
   $('impAdd').hidden = false;
   $('impNo').textContent = 'No thanks';
   $('impBanner').hidden = false;
@@ -1746,21 +2023,14 @@ function importFailed(msg){
 }
 function addImported(){
   const d = pendingImport; if (!d) return;
-  const taken = {};
-  state.charts.forEach(function(c){ taken[c.name] = true; });
-  const ids = d.charts.map(function(c){
-    let name = c.name;
-    if (taken[name]) name = (name + ' (shared)').slice(0, SHARE_MAX.name + 9);
-    taken[name] = true;
-    const nc = {id:uid(), name:name, chords:c.chords};
-    state.charts.push(nc);
-    return nc.id;
-  });
+  /* the shared parts become the song's own parts; none of the user's charts change */
+  const sections = d.charts.map(function(c){ return {id:uid(), name:c.name, chords:c.chords}; });
   let name = d.name;
   if (state.songs.some(function(s){ return s.name === name; })) name += ' (shared)';
-  const song = {id:uid(), name:name, parts:d.parts.map(function(p){ return {chart:ids[p.ci], reps:p.reps}; })};
+  const song = {id:uid(), name:name, sections:sections,
+                order:d.parts.map(function(p){ return {s:sections[p.ci].id, reps:p.reps}; })};
   /* replace the untouched starter song rather than piling up empty ones */
-  if (state.songs.length === 1 && !state.songs[0].parts.length) state.songs = [];
+  if (state.songs.length === 1 && state.songs[0].sections.every(function(x){ return !x.chords.length; })) state.songs = [];
   state.songs.push(song);
   state.activeSong = song.id;
   pendingImport = null;
@@ -1777,7 +2047,7 @@ function checkSharedLink(){
 }
 
 function shareSong(){
-  const s = activeSong(); if (!s || !s.parts.length) return;
+  const s = activeSong(); if (!s || !s.order.length) return;
   const text = songText(s), subject = s.name + ' — Chord Shed song idea';
   if (window.Sharer){ Sharer.text(subject, text); return; }          /* Android: system share sheet */
   if (navigator.share){
@@ -1802,6 +2072,9 @@ function clearPlayingMarks(){
   Array.prototype.forEach.call(document.querySelectorAll('#stripChips .chip.playing'), function(el){
     el.classList.remove('playing');
   });
+  Array.prototype.forEach.call(document.querySelectorAll('#sections .chip.now'), function(el){
+    el.classList.remove('now');
+  });
   Array.prototype.forEach.call(document.querySelectorAll('#parts .pchords span.now'), function(el){
     el.classList.remove('now');
   });
@@ -1822,6 +2095,12 @@ function markPlaying(cur){
     const on = songOn && k === cur.part;
     el.classList.toggle('playing', on);
     Array.prototype.forEach.call(el.querySelectorAll('.pchords span'), function(sp, i){
+      sp.classList.toggle('now', on && i === cur.chordIdx);
+    });
+  });
+  Array.prototype.forEach.call($('sections').querySelectorAll('.section'), function(el){
+    const on = songOn && el.dataset.id === cur.section;
+    Array.prototype.forEach.call(el.querySelectorAll('.chip'), function(sp, i){
       sp.classList.toggle('now', on && i === cur.chordIdx);
     });
   });
@@ -1862,8 +2141,12 @@ function barsOf(src){
   if (src.kind === 'chart') addChart(chartById(src.id), -1);
   else if (src.kind === 'song'){
     const s = state.songs.find(function(x){ return x.id === src.id; });
-    if (s) s.parts.forEach(function(p, k){
-      for (let r = 0; r < (p.reps || 1); r++) addChart(chartById(p.chart), k);
+    /* part = position in the arrangement, section = which part's chords */
+    if (s) s.order.forEach(function(o, k){
+      const sec = sectionById(s, o.s); if (!sec) return;
+      for (let r = 0; r < (o.reps || 1); r++){
+        sec.chords.forEach(function(ch, i){ out.push({pc:ch.pc, t:ch.t, chart:null, section:sec.id, idx:i, part:k}); });
+      }
     });
   }
   return out;
@@ -1923,7 +2206,7 @@ const seq = {
           ? currentMidis() : midisFor(ch.pc, ch.t);
         audio.strum(midis, tuning().inst, when, kind === 'U' ? 'up' : 'down', kind === 'x');
       }
-      this.drawQueue.push({t:when, step:step, chordIdx:ch.idx, chart:ch.chart, part:ch.part, bar:bar,
+      this.drawQueue.push({t:when, step:step, chordIdx:ch.idx, chart:ch.chart, part:ch.part, section:ch.section, bar:bar,
                            label:chordLabel(ch.pc, ch.t), pc:ch.pc, tid:ch.t});
 
       this.nextTime += eighth;
@@ -2880,17 +3163,9 @@ function init(){
   });
   $('delChart').addEventListener('click', function(){
     const c = activeChart(); if (!c) return;
-    const inSongs = state.songs.filter(function(s){
-      return s.parts.some(function(p){ return p.chart === c.id; });
-    });
-    if (!confirm('Delete "' + c.name + '"?' +
-        (inSongs.length ? ' It is a part in ' + inSongs.length + ' song idea' + (inSongs.length > 1 ? 's' : '') +
-          ', and will be taken out of ' + (inSongs.length > 1 ? 'them' : 'it') + '.' : '') +
-        ' This cannot be undone.')) return;
-    if (seq.on && seq.source) seq.stop();
-    state.songs.forEach(function(s){
-      s.parts = s.parts.filter(function(p){ return p.chart !== c.id; });
-    });
+    /* song ideas keep their own copies of chords, so they are not affected */
+    if (!confirm('Delete "' + c.name + '"? Your song ideas keep their chords. This cannot be undone.')) return;
+    if (seq.on && seq.source && seq.source.kind === 'chart' && seq.source.id === c.id) seq.stop();
     state.charts = state.charts.filter(function(x){ return x.id !== c.id; });
     if (!state.charts.length) state.charts = [{id:uid(), name:'My chart', chords:[]}];
     state.activeChart = state.charts[0].id;
@@ -2927,14 +3202,16 @@ function init(){
   $('newSong').addEventListener('click', function(){
     const name = prompt('Name this song idea', 'Song idea ' + (state.songs.length + 1));
     if (name === null) return;
-    const s = {id:uid(), name:(name.trim() || 'Untitled'), parts:[]};
+    const s = newSong(name.trim() || 'Untitled');
     state.songs.push(s);
     state.activeSong = s.id;
+    arrNote = '';
     renderSongs(); syncPlayButtons(); save();
   });
   $('songList').addEventListener('click', function(e){
     const b = e.target.closest('.chartitem'); if (!b) return;
     state.activeSong = b.dataset.id;
+    arrNote = '';
     renderSongs(); syncPlayButtons(); save();
   });
   $('renameSong').addEventListener('click', function(){
@@ -2946,26 +3223,27 @@ function init(){
   });
   $('dupSong').addEventListener('click', function(){
     const s = activeSong(); if (!s) return;
+    const ids = {};
     const copy = {id:uid(), name:s.name + ' copy',
-                  parts:s.parts.map(function(p){ return {chart:p.chart, reps:p.reps || 1}; })};
+      sections:s.sections.map(function(x){
+        ids[x.id] = uid();
+        return {id:ids[x.id], name:x.name, chords:x.chords.map(function(ch){ return {pc:ch.pc, t:ch.t}; })};
+      }),
+      order:[]};
+    copy.order = s.order.filter(function(o){ return ids[o.s]; })
+                        .map(function(o){ return {s:ids[o.s], reps:o.reps || 1}; });
     state.songs.push(copy);
     state.activeSong = copy.id;
     renderSongs(); syncPlayButtons(); save();
   });
   $('delSong').addEventListener('click', function(){
     const s = activeSong(); if (!s) return;
-    if (!confirm('Delete the song idea "' + s.name + '"? Its charts are kept. This cannot be undone.')) return;
+    if (!confirm('Delete the song idea "' + s.name + '"? Your charts are kept. This cannot be undone.')) return;
     if (seq.on && seq.source && seq.source.id === s.id) seq.stop();
     state.songs = state.songs.filter(function(x){ return x.id !== s.id; });
-    if (!state.songs.length) state.songs = [{id:uid(), name:'Song idea 1', parts:[]}];
+    if (!state.songs.length) state.songs = [newSong('Song idea 1')];
     state.activeSong = state.songs[0].id;
     renderSongs(); syncPlayButtons(); save();
-  });
-  $('addPart').addEventListener('click', function(){
-    const s = activeSong(), id = $('partChart').value;
-    if (!s || !chartById(id)) return;
-    s.parts.push({chart:id, reps:1});
-    renderSongs(); save();
   });
   $('shareSong').addEventListener('click', shareSong);
   $('importSong').addEventListener('click', function(){
@@ -2980,34 +3258,112 @@ function init(){
     const s = activeSong(); if (!s) return;
     playFrom({kind:'song', id:s.id});
   });
+
+  /* parts: pick one to fill, rename, delete, hear or drop a chord */
+  const PART_NAMES = ['Verse', 'Chorus', 'Bridge', 'Pre-chorus', 'Intro', 'Outro'];
+  $('addSection').addEventListener('click', function(){
+    const s = activeSong(); if (!s) return;
+    const have = s.sections.map(function(x){ return x.name.toLowerCase(); });
+    const guess = PART_NAMES.find(function(n){ return have.indexOf(n.toLowerCase()) < 0; }) ||
+                  'Part ' + (s.sections.length + 1);
+    const name = prompt('Name the new part', guess);
+    if (name === null) return;
+    const sec = {id:uid(), name:(name.trim() || guess), chords:[]};
+    s.sections.push(sec);
+    s.order.push({s:sec.id, reps:1});
+    selSection = sec.id;
+    renderSongs(); save();
+  });
+  $('sections').addEventListener('click', function(e){
+    const s = activeSong(); if (!s) return;
+    const rn = e.target.closest('[data-rename]');
+    if (rn){
+      const sec = sectionById(s, rn.dataset.rename);
+      const name = prompt('Rename this part', sec.name);
+      if (name !== null && name.trim()) sec.name = name.trim();
+      selSection = sec.id;
+      renderSongs(); save();
+      return;
+    }
+    const del = e.target.closest('[data-sdel]');
+    if (del){
+      const sec = sectionById(s, del.dataset.sdel);
+      const n = s.order.filter(function(o){ return o.s === sec.id; }).length;
+      if (!confirm('Delete the part "' + sec.name + '"' + (n ? ', which plays ' + n + (n === 1 ? ' time' : ' times') +
+                   ' in the arrangement' : '') + '? This cannot be undone.')) return;
+      s.sections = s.sections.filter(function(x){ return x.id !== sec.id; });
+      s.order = s.order.filter(function(o){ return o.s !== sec.id; });
+      renderSongs(); save();
+      return;
+    }
+    const x = e.target.closest('[data-secdel]');
+    if (x){
+      sectionById(s, x.dataset.secdel).chords.splice(+x.dataset.i, 1);
+      selSection = x.dataset.secdel;
+      renderSongs(); save();
+      return;
+    }
+    const cl = e.target.closest('.cl[data-sec]');
+    if (cl){
+      const ch = sectionById(s, cl.dataset.sec).chords[+cl.dataset.i];
+      audio.resume(); audio.strum(midisFor(ch.pc, ch.t), tuning().inst, 0, 'down', false);
+    }
+    const tile = e.target.closest('.section');
+    if (tile && tile.dataset.id !== selSection){ selSection = tile.dataset.id; renderSongs(); }
+  });
+
+  /* palette: hear a chord, or add it to the selected part */
+  $('palSource').addEventListener('change', function(){
+    state.palSource = this.value;
+    renderSongs(); save();
+  });
+  $('palChips').addEventListener('click', function(e){
+    const s = activeSong(); if (!s) return;
+    const add = e.target.closest('[data-padd]'), hear = e.target.closest('[data-pi]');
+    const c = paletteNow[+(add ? add.dataset.padd : hear ? hear.dataset.pi : -1)];
+    if (!c) return;
+    audio.resume(); audio.strum(midisFor(c.pc, c.t), tuning().inst, 0, 'down', false);
+    if (add){
+      const sec = sectionById(s, selSection); if (!sec) return;
+      sec.chords.push({pc:c.pc, t:c.t});
+      renderSongs(); save();
+    }
+  });
+
+  /* arrangement */
+  $('suggestArr').addEventListener('click', suggestArrangement);
+  $('arrAdd').addEventListener('click', function(e){
+    const b = e.target.closest('[data-addsec]'), s = activeSong(); if (!b || !s) return;
+    s.order.push({s:b.dataset.addsec, reps:1});
+    arrNote = '';
+    renderSongs(); save();
+  });
   $('parts').addEventListener('click', function(e){
     const s = activeSong(); if (!s) return;
     const del = e.target.closest('[data-pdel]');
-    if (del){ s.parts.splice(+del.dataset.pdel, 1); renderSongs(); save(); return; }
+    if (del){ s.order.splice(+del.dataset.pdel, 1); arrNote = ''; renderSongs(); save(); return; }
     const mv = e.target.closest('[data-pmv]');
     if (mv){
       const i = +mv.dataset.k, j = i + (+mv.dataset.pmv);
-      if (j >= 0 && j < s.parts.length){
-        const tmp = s.parts[i]; s.parts[i] = s.parts[j]; s.parts[j] = tmp;
+      if (j >= 0 && j < s.order.length){
+        const tmp = s.order[i]; s.order[i] = s.order[j]; s.order[j] = tmp;
+        arrNote = '';
         renderSongs(); save();
       }
       return;
     }
     const rp = e.target.closest('[data-reps]');
     if (rp){
-      const p = s.parts[+rp.dataset.k];
-      p.reps = Math.min(16, Math.max(1, (p.reps || 1) + (+rp.dataset.reps)));
+      const o = s.order[+rp.dataset.k];
+      o.reps = Math.min(16, Math.max(1, (o.reps || 1) + (+rp.dataset.reps)));
       renderSongs(); save();
       return;
     }
-    /* tapping a part opens its chart in the editor above */
+    /* tapping an arrangement entry selects that part for editing */
     const part = e.target.closest('.part');
     if (part){
-      const p = s.parts[+part.dataset.k];
-      if (p && chartById(p.chart)){
-        state.activeChart = p.chart;
-        renderCharts(); save();
-      }
+      const o = s.order[+part.dataset.k];
+      if (o && sectionById(s, o.s)){ selSection = o.s; renderSongs(); }
     }
   });
 
