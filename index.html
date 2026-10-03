@@ -158,7 +158,8 @@ section.card{padding:16px}
 .deg{display:flex; flex-direction:column; align-items:center; gap:3px; padding:9px 2px 8px;
   border:1px solid var(--line); border-radius:9px; background:var(--paper); cursor:pointer}
 .deg:hover{border-color:var(--line-2)}
-.deg .rn{font:500 10px/1 "IBM Plex Mono",monospace; color:var(--accent); letter-spacing:.08em}
+.deg .rn{font:500 9.5px/1 "IBM Plex Mono",monospace; color:var(--ink-3); letter-spacing:.06em; text-transform:uppercase}
+.deg:first-child .rn{color:var(--accent)}
 .deg .cn{font-family:"Bodoni Moda",Georgia,serif; font-size:17px; line-height:1.1}
 .keyblock{margin-top:16px}
 
@@ -258,6 +259,22 @@ input[type=range]{flex:1 1 150px; min-width:120px; accent-color:var(--accent)}
 .progitem .mini:disabled:hover{color:var(--ink-3); border-color:var(--line)}
 .progempty{display:flex; align-items:center; color:var(--ink-3); font-size:13px; font-style:italic}
 .songsgrid{margin-top:22px}
+.strip{margin-top:14px; padding-top:12px; border-top:1px solid var(--line)}
+.striphead{display:flex; align-items:center; gap:8px; flex-wrap:wrap}
+.striphead select{flex:1 1 140px; min-width:0; max-width:260px}
+.chips{display:flex; gap:6px; flex-wrap:wrap; margin-top:10px; min-height:34px; align-items:center}
+.chip{display:inline-flex; align-items:center; border:1px solid var(--line); border-radius:8px;
+  background:var(--paper); color:var(--ink); overflow:hidden}
+.chip.playing{border-color:var(--accent); background:var(--accent-soft)}
+.chip.fresh{border-color:var(--accent); animation:chipin .9s ease-out}
+@keyframes chipin{from{background:var(--accent-soft)} to{background:var(--paper)}}
+.chip .cl{font-family:"Bodoni Moda",Georgia,serif; font-size:16px; padding:5px 8px 5px 10px; cursor:pointer;
+  background:none; border:0; color:inherit}
+.chip .cx{display:grid; place-items:center; width:26px; align-self:stretch; border:0; border-left:1px solid var(--line);
+  background:none; color:var(--ink-3); cursor:pointer; padding:0}
+.chip .cx svg{width:13px; height:13px}
+.chip .cx:hover{color:var(--ochre)}
+.chips .empty{color:var(--ink-3); font-size:13px; font-style:italic}
 .chartitem .cdot{width:7px; height:7px; border-radius:50%; background:var(--accent); flex:0 0 auto}
 .parts{display:flex; gap:8px; flex-wrap:wrap; min-height:54px; align-items:stretch}
 .part{display:flex; flex-direction:column; gap:5px; min-width:120px; max-width:220px; padding:9px 10px 8px;
@@ -404,6 +421,14 @@ footer .colophon{flex:1 1 320px; display:flex; flex-direction:column; gap:2px}
       </svg>Options</button>
   </nav>
 
+  <div class="updbanner" id="impBanner" role="status" hidden>
+    <div class="txt"><b id="impTitle">Shared song idea</b><span id="impMsg"></span></div>
+    <div class="acts">
+      <button type="button" class="btn primary sm" id="impAdd">Add it</button>
+      <button type="button" class="btn sm" id="impNo">No thanks</button>
+    </div>
+  </div>
+
   <div class="updbanner" id="updBanner" role="status" hidden>
     <div class="txt"><b id="updBanTitle">Update available</b><span id="updBanMsg"></span>
       <div class="updbar" id="updBar" hidden><i></i></div></div>
@@ -442,6 +467,16 @@ footer .colophon{flex:1 1 320px; display:flex; flex-direction:column; gap:2px}
         </div>
         <p class="hint" id="stageHint" style="margin:10px 0 0">Tap a string on the diagram to hear it alone.</p>
         <div class="tuningrow" id="tuningRow"></div>
+
+        <div class="strip">
+          <div class="striphead">
+            <label class="tiny" for="stripChart">Add goes to</label>
+            <select id="stripChart" aria-label="Chart that Add puts chords into"></select>
+            <button type="button" class="btn sm" id="stripNew">New chart</button>
+            <button type="button" class="btn sm" id="stripPlay">Play</button>
+          </div>
+          <div class="chips" id="stripChips"></div>
+        </div>
       </div>
 
       <div class="card picker">
@@ -480,6 +515,8 @@ footer .colophon{flex:1 1 320px; display:flex; flex-direction:column; gap:2px}
         </div>
       </div>
       <div class="romanrow" id="romanRow"></div>
+      <p class="hint" style="margin:10px 0 0">The seven chords that belong to this key. Most songs are built from these, and
+        they start and end on <b>home</b>. Tap one to see its shape.</p>
     </section>
   </section>
 
@@ -597,7 +634,10 @@ footer .colophon{flex:1 1 320px; display:flex; flex-direction:column; gap:2px}
       <div class="card" style="padding:16px">
         <div class="sechead" style="margin-bottom:10px">
           <h2>Song ideas</h2>
-          <button type="button" class="btn sm" id="newSong">New</button>
+          <div class="acts">
+            <button type="button" class="btn sm" id="importSong">Import</button>
+            <button type="button" class="btn sm" id="newSong">New</button>
+          </div>
         </div>
         <div class="chartlist" id="songList"></div>
       </div>
@@ -607,6 +647,7 @@ footer .colophon{flex:1 1 320px; display:flex; flex-direction:column; gap:2px}
           <h2 id="activeSongName">Song idea</h2>
           <div class="acts">
             <button type="button" class="btn sm primary" id="playSong">Play song</button>
+            <button type="button" class="btn sm" id="shareSong">Share</button>
             <button type="button" class="btn sm" id="renameSong">Rename</button>
             <button type="button" class="btn sm" id="dupSong">Duplicate</button>
             <button type="button" class="btn sm" id="delSong">Delete</button>
@@ -1233,12 +1274,15 @@ function load(){
   if (Array.isArray(o.charts) && o.charts.length){
     state.charts = o.charts;
     state.activeChart = o.activeChart || o.charts[0].id;
+    /* The starter chart used to be named in Roman numerals. Rename it only if the
+       user never did. */
+    state.charts.forEach(function(c){ if (c.name === 'I–vi–IV–V in C') c.name = 'C – Am – F – G'; });
   } else if (Array.isArray(o.prog)){
     /* migrate the single v1 chart */
     state.charts = [{id:uid(), name:'My chart', chords:o.prog}];
     state.activeChart = state.charts[0].id;
   } else {
-    state.charts = [{id:uid(), name:'I–vi–IV–V in C',
+    state.charts = [{id:uid(), name:'C – Am – F – G',
       chords:[{pc:0,t:'maj'},{pc:9,t:'min'},{pc:5,t:'maj'},{pc:7,t:'maj'}]}];
     state.activeChart = state.charts[0].id;
   }
@@ -1446,16 +1490,16 @@ function strum(dir){
    ===================================================================== */
 const KEY_SHAPES = {
   major:{steps:[0,2,4,5,7,9,11], quals:['maj','min','min','maj','maj','min','dim'],
-         romans:['I','ii','iii','IV','V','vi','vii°']},
+         labels:['home','minor','minor','major','major','minor','dim']},
   minor:{steps:[0,2,3,5,7,8,10], quals:['min','dim','maj','min','min','maj','maj'],
-         romans:['i','ii°','III','iv','v','VI','VII']}
+         labels:['home','dim','major','minor','minor','major','major']}
 };
 function renderKey(){
   const k = KEY_SHAPES[state.keyMode];
   $('romanRow').innerHTML = k.steps.map(function(st, i){
     const pc = (state.keyRoot + st) % 12;
     return '<button type="button" class="deg" data-pc="' + pc + '" data-t="' + k.quals[i] + '">' +
-           '<span class="rn">' + k.romans[i] + '</span><span class="cn">' + chordLabel(pc, k.quals[i]) + '</span></button>';
+           '<span class="rn">' + k.labels[i] + '</span><span class="cn">' + chordLabel(pc, k.quals[i]) + '</span></button>';
   }).join('');
 }
 
@@ -1503,7 +1547,27 @@ function renderCharts(){
   ['delChart','renameChart','dupChart','playProg'].forEach(function(id){ $(id).disabled = !c; });
   $('chartTempo').textContent = 'Plays at ' + state.bpm + ' BPM with the strum pattern from the Practice tab, one bar per chord.';
   renderSongs();
+  renderChordStrip();
   syncPlayButtons();
+}
+
+/* The strip under the chord diagram: which chart Add puts chords into, and what is
+   already in it. fresh marks the chip just added. */
+function renderChordStrip(fresh){
+  const sel = $('stripChart'), c = activeChart();
+  sel.innerHTML = state.charts.map(function(x){
+    return '<option value="' + x.id + '">' + escapeHtml(x.name) + ' (' + x.chords.length + ')</option>';
+  }).join('');
+  if (c) sel.value = c.id;
+  $('stripChips').innerHTML = !c || !c.chords.length
+    ? '<span class="empty">Nothing in this chart yet — pick a chord and press Add.</span>'
+    : c.chords.map(function(ch, i){
+        return '<span class="chip' + (fresh && i === c.chords.length - 1 ? ' fresh' : '') + '" data-i="' + i + '">' +
+          '<button type="button" class="cl" data-i="' + i + '" title="Show and hear this chord">' + chordLabel(ch.pc, ch.t) + '</button>' +
+          '<button type="button" class="cx" data-i="' + i + '" title="Remove from chart" aria-label="Remove ' +
+            chordLabel(ch.pc, ch.t) + ' from chart">' + ICON_BIN + '</button></span>';
+      }).join('');
+  $('stripPlay').disabled = !c || !c.chords.length;
 }
 
 /* --- song ideas: an ordered run of charts, each repeated reps times --- */
@@ -1559,6 +1623,7 @@ function renderSongs(){
   $('songSum').textContent = bars ? bars + ' bars · ' + Math.floor(secs / 60) + ':' + String(secs % 60).padStart(2, '0') +
     ' at ' + state.bpm + ' BPM' : '';
   ['delSong','renameSong','dupSong'].forEach(function(id){ $(id).disabled = !s; });
+  $('shareSong').disabled = !s || !s.parts.length;
   $('playSong').disabled = !bars;
 }
 
@@ -1573,6 +1638,7 @@ function syncPlayButtons(){
   set('playPattern', seq.on, 'Play');
   const c = activeChart(), s = activeSong();
   set('playProg', !!(src && src.kind === 'chart' && c && src.id === c.id), 'Play');
+  set('stripPlay', !!(src && src.kind === 'chart' && c && src.id === c.id), 'Play');
   set('playSong', !!(src && src.kind === 'song' && s && src.id === s.id), 'Play song');
 }
 
@@ -1582,12 +1648,159 @@ function playFrom(src){
   if (!same) seq.start(src);
 }
 
+/* --- sharing a song idea ---
+   A song travels as a link: SITE_URL/#song=<base64url JSON>. Everything after # stays
+   in the browser, so sharing uploads nothing. The JSON carries only the charts the
+   song uses: {v:1, n:name, c:[[chartName, [pc,type, pc,type, ...]], ...], p:[[chartIndex, reps], ...]} */
+const SHARE_MAX = {charts:50, chords:64, parts:100, name:60};
+
+function b64urlEncode(str){
+  let bin = '';
+  new TextEncoder().encode(str).forEach(function(b){ bin += String.fromCharCode(b); });
+  return btoa(bin).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+}
+function b64urlDecode(str){
+  let b = str.replace(/-/g, '+').replace(/_/g, '/');
+  while (b.length % 4) b += '=';
+  const bin = atob(b);
+  return new TextDecoder().decode(Uint8Array.from(bin, function(ch){ return ch.charCodeAt(0); }));
+}
+
+function songPayload(s){
+  const used = [], index = {};
+  const parts = [];
+  s.parts.forEach(function(p){
+    const c = chartById(p.chart); if (!c) return;
+    if (!(c.id in index)){
+      index[c.id] = used.length;
+      const flat = [];
+      c.chords.forEach(function(ch){ flat.push(ch.pc, ch.t); });
+      used.push([c.name, flat]);
+    }
+    parts.push([index[c.id], p.reps || 1]);
+  });
+  return {v:1, n:s.name, c:used, p:parts};
+}
+
+function songLink(s){ return SITE_URL + '/#song=' + b64urlEncode(JSON.stringify(songPayload(s))); }
+
+function songText(s){
+  const lines = s.parts.map(function(p){
+    const c = chartById(p.chart); if (!c) return null;
+    const chords = c.chords.map(function(ch){ return chordLabel(ch.pc, ch.t); }).join('  ');
+    return c.name + ((p.reps || 1) > 1 ? ' ×' + p.reps : '') + ':  ' + (chords || '(empty)');
+  }).filter(Boolean);
+  return '“' + s.name + '” — a song idea from Chord Shed\n\n' + lines.join('\n') +
+         '\n\nOpen it in Chord Shed:\n' + songLink(s);
+}
+
+/* Shared data is untrusted: check every field, cap every size, and refuse rather
+   than guess. Returns {name, charts:[{name, chords}], parts:[{ci, reps}]}. */
+function parseShared(input){
+  const m = String(input || '').match(/(?:^|[#&?\s])song=([A-Za-z0-9_-]+)/) ||
+            String(input || '').trim().match(/^([A-Za-z0-9_-]{8,})$/);
+  if (!m) throw new Error('That is not a Chord Shed song link.');
+  let o;
+  try{ o = JSON.parse(b64urlDecode(m[1])); }catch(e){ throw new Error('The link is damaged or incomplete.'); }
+  function bad(){ throw new Error('The link is damaged or from a newer version of Chord Shed.'); }
+  if (!o || o.v !== 1 || typeof o.n !== 'string' || !Array.isArray(o.c) || !Array.isArray(o.p)) bad();
+  if (o.c.length < 1 || o.c.length > SHARE_MAX.charts || o.p.length < 1 || o.p.length > SHARE_MAX.parts) bad();
+  const charts = o.c.map(function(c){
+    if (!Array.isArray(c) || typeof c[0] !== 'string' || !Array.isArray(c[1])) bad();
+    const flat = c[1];
+    if (flat.length % 2 || flat.length / 2 > SHARE_MAX.chords) bad();
+    const chords = [];
+    for (let i = 0; i < flat.length; i += 2){
+      const pc = flat[i], t = flat[i + 1];
+      if (!Number.isInteger(pc) || pc < 0 || pc > 11 || typeof t !== 'string' || !TYPE_BY_ID[t]) bad();
+      chords.push({pc:pc, t:t});
+    }
+    return {name:(c[0].trim() || 'Untitled').slice(0, SHARE_MAX.name), chords:chords};
+  });
+  const parts = o.p.map(function(p){
+    if (!Array.isArray(p) || !Number.isInteger(p[0]) || p[0] < 0 || p[0] >= charts.length ||
+        !Number.isInteger(p[1]) || p[1] < 1 || p[1] > 16) bad();
+    return {ci:p[0], reps:p[1]};
+  });
+  return {name:(o.n.trim() || 'Shared song').slice(0, SHARE_MAX.name), charts:charts, parts:parts};
+}
+
+let pendingImport = null;
+function offerImport(data){
+  pendingImport = data;
+  $('impTitle').textContent = 'Add the shared song idea “' + data.name + '”?';
+  $('impMsg').textContent = data.parts.length + (data.parts.length === 1 ? ' part' : ' parts') + ' from ' +
+    data.charts.map(function(c){ return c.name; }).join(', ') +
+    '. It is added as new copies — none of your charts change.';
+  $('impAdd').hidden = false;
+  $('impNo').textContent = 'No thanks';
+  $('impBanner').hidden = false;
+}
+function importFailed(msg){
+  pendingImport = null;
+  $('impTitle').textContent = 'Could not open that song idea';
+  $('impMsg').textContent = msg;
+  $('impAdd').hidden = true;
+  $('impNo').textContent = 'Close';
+  $('impBanner').hidden = false;
+}
+function addImported(){
+  const d = pendingImport; if (!d) return;
+  const taken = {};
+  state.charts.forEach(function(c){ taken[c.name] = true; });
+  const ids = d.charts.map(function(c){
+    let name = c.name;
+    if (taken[name]) name = (name + ' (shared)').slice(0, SHARE_MAX.name + 9);
+    taken[name] = true;
+    const nc = {id:uid(), name:name, chords:c.chords};
+    state.charts.push(nc);
+    return nc.id;
+  });
+  let name = d.name;
+  if (state.songs.some(function(s){ return s.name === name; })) name += ' (shared)';
+  const song = {id:uid(), name:name, parts:d.parts.map(function(p){ return {chart:ids[p.ci], reps:p.reps}; })};
+  /* replace the untouched starter song rather than piling up empty ones */
+  if (state.songs.length === 1 && !state.songs[0].parts.length) state.songs = [];
+  state.songs.push(song);
+  state.activeSong = song.id;
+  pendingImport = null;
+  $('impBanner').hidden = true;
+  save();
+  showView('charts');
+}
+/* A #song= link opened in the browser. Clear it so a reload does not offer it again. */
+function checkSharedLink(){
+  if (!/song=/.test(location.hash)) return;
+  const h = location.hash;
+  try{ history.replaceState(null, '', location.pathname + location.search); }catch(e){}
+  try{ offerImport(parseShared(h)); }catch(e){ importFailed(e.message); }
+}
+
+function shareSong(){
+  const s = activeSong(); if (!s || !s.parts.length) return;
+  const text = songText(s), subject = s.name + ' — Chord Shed song idea';
+  if (window.Sharer){ Sharer.text(subject, text); return; }          /* Android: system share sheet */
+  if (navigator.share){
+    navigator.share({title:subject, text:text}).catch(function(){});
+    return;
+  }
+  const btn = $('shareSong');
+  function done(label){ btn.textContent = label; setTimeout(function(){ btn.textContent = 'Share'; }, 1600); }
+  if (navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(text).then(function(){ done('Copied'); },
+      function(){ window.prompt('Copy this link to share the song idea', songLink(s)); });
+  } else window.prompt('Copy this link to share the song idea', songLink(s));
+}
+
 function clearPlayingMarks(){
   Array.prototype.forEach.call($('prog').children, function(el){
     if (el.classList) el.classList.remove('playing');
   });
   Array.prototype.forEach.call($('parts').children, function(el){
     if (el.classList) el.classList.remove('playing');
+  });
+  Array.prototype.forEach.call(document.querySelectorAll('#stripChips .chip.playing'), function(el){
+    el.classList.remove('playing');
   });
   Array.prototype.forEach.call(document.querySelectorAll('#parts .pchords span.now'), function(el){
     el.classList.remove('now');
@@ -1599,6 +1812,9 @@ function markPlaying(cur){
   const c = activeChart();
   Array.prototype.forEach.call($('prog').children, function(el, i){
     if (el.classList) el.classList.toggle('playing', !!c && cur.chart === c.id && i === cur.chordIdx);
+  });
+  Array.prototype.forEach.call($('stripChips').querySelectorAll('.chip'), function(el, i){
+    el.classList.toggle('playing', !!c && cur.chart === c.id && i === cur.chordIdx);
   });
   const songOn = seq.source && seq.source.kind === 'song' && activeSong() && seq.source.id === activeSong().id;
   Array.prototype.forEach.call($('parts').children, function(el, k){
@@ -2208,7 +2424,7 @@ function parseChord(text){
 /* =====================================================================
    Options: build info and update check
    ===================================================================== */
-const WEB_VERSION = '2.4';                 /* build.ps1 refuses to build if this differs from the APK's */
+const WEB_VERSION = '2.5';                 /* build.ps1 refuses to build if this differs from the APK's */
 const VERSION_URL = 'https://chord-shed.vercel.app/version.json';
 const SITE_URL    = 'https://chord-shed.vercel.app';
 
@@ -2468,6 +2684,9 @@ function init(){
   renderStage();
   tuner.renderStrings();
   showView(state.view || 'chords');
+  checkSharedLink();
+  /* a song link opened while the page is already loaded only changes the hash */
+  window.addEventListener('hashchange', checkSharedLink);
 
   /* --- tabs --- */
   $('tabs').addEventListener('click', function(e){
@@ -2509,11 +2728,36 @@ function init(){
   $('addBtn').addEventListener('click', function(){
     const c = activeChart(); if (!c) return;
     c.chords.push({pc:state.rootPc, t:state.typeId});
-    renderCharts(); save();
+    renderCharts(); renderChordStrip(true); save();
     const btn = $('addBtn'), was = btn.textContent;
     btn.textContent = 'Added';
     setTimeout(function(){ btn.textContent = was; }, 900);
   });
+  /* --- the chart strip under the diagram --- */
+  $('stripChart').addEventListener('change', function(){
+    state.activeChart = this.value;
+    renderCharts(); save();
+  });
+  $('stripNew').addEventListener('click', function(){
+    const name = prompt('Name the new chart', 'Chart ' + (state.charts.length + 1));
+    if (name === null) return;
+    const c = {id:uid(), name:(name.trim() || 'Untitled'), chords:[]};
+    state.charts.push(c);
+    state.activeChart = c.id;
+    renderCharts(); save();
+  });
+  $('stripPlay').addEventListener('click', function(){
+    const c = activeChart(); if (!c || !c.chords.length) return;
+    playFrom({kind:'chart', id:c.id});
+  });
+  $('stripChips').addEventListener('click', function(e){
+    const c = activeChart(); if (!c) return;
+    const x = e.target.closest('.cx');
+    if (x){ c.chords.splice(+x.dataset.i, 1); renderCharts(); save(); return; }
+    const l = e.target.closest('.cl');
+    if (l){ const ch = c.chords[+l.dataset.i]; setChord(ch.pc, ch.t); strum(); }
+  });
+
   $('diagramHost').addEventListener('click', function(e){
     const hit = e.target.closest('.hit');
     if (!hit){ strum('down'); return; }
@@ -2723,6 +2967,15 @@ function init(){
     s.parts.push({chart:id, reps:1});
     renderSongs(); save();
   });
+  $('shareSong').addEventListener('click', shareSong);
+  $('importSong').addEventListener('click', function(){
+    const v = window.prompt('Paste a shared Chord Shed song link');
+    if (v === null || !v.trim()) return;
+    try{ offerImport(parseShared(v)); }catch(e){ importFailed(e.message); }
+    window.scrollTo(0, 0);
+  });
+  $('impAdd').addEventListener('click', addImported);
+  $('impNo').addEventListener('click', function(){ pendingImport = null; $('impBanner').hidden = true; });
   $('playSong').addEventListener('click', function(){
     const s = activeSong(); if (!s) return;
     playFrom({kind:'song', id:s.id});
