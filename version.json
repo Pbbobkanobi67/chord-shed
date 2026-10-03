@@ -1,10 +1,10 @@
 {
+  "size": 575185,
+  "sha256": "5c44fc0e57ddb86a0b463bd9af2d702c2217a12456d765ee607e3d1ef955fb2e",
   "released": "2026-10-02",
+  "versionName": "2.5",
+  "versionCode": 16,
   "notes": "See the release notes on GitHub for what changed.",
-  "versionCode": 15,
   "apk": "/dl/chord-shed.apk",
-  "size": 571089,
-  "versionName": "2.4",
-  "releasedAt": "2026-10-02T21:14:01.495Z",
-  "sha256": "61346dfc9ab1f466a4f57ba955db7ba879635d88ef5c0a026bb9c7ae4c9dd08d"
+  "releasedAt": "2026-10-03T02:07:34.031Z"
 }

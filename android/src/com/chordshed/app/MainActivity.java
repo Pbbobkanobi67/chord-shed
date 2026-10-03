@@ -215,6 +215,7 @@ public class MainActivity extends Activity {
             }
         });
         web.addJavascriptInterface(new UpdateBridge(), "Updater");
+        web.addJavascriptInterface(new ShareBridge(), "Sharer");
         IntentFilter f = new IntentFilter(Updater.ACTION_STATUS);
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             registerReceiver(installStatus, f, Context.RECEIVER_NOT_EXPORTED);
@@ -463,6 +464,27 @@ public class MainActivity extends Activity {
                         + pct + "," + quote(message) + ");", null);
             }
         });
+    }
+
+    /** Exposed to the page as Sharer.*: hands plain text to the system share sheet.
+        A WebView has no navigator.share, so without this the page could only copy. */
+    private class ShareBridge {
+        @JavascriptInterface
+        public void text(final String subject, final String body) {
+            runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    Intent send = new Intent(Intent.ACTION_SEND);
+                    send.setType("text/plain");
+                    send.putExtra(Intent.EXTRA_SUBJECT, subject);
+                    send.putExtra(Intent.EXTRA_TEXT, body);
+                    try {
+                        startActivity(Intent.createChooser(send, "Share song idea"));
+                    } catch (ActivityNotFoundException ignored) {
+                    }
+                }
+            });
+        }
     }
 
     /** Exposed to the page as Updater.*. The page can start an update but not
