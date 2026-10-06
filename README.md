@@ -19,13 +19,19 @@ Chord diagrams, fingerings and voicings up the neck — for ukulele and guitar.
 - **Fingering is derived per shape** — finger numbers in the dots, barres detected and drawn.
 - **Sound** is a Karplus–Strong plucked string synthesized in the browser: shorter and brighter for
   nylon uke than for guitar. Strum a shape, or tap one string to hear it alone.
-- 18 chord qualities, a chord-name parser (`F#m7`, `Bbsus4`), interval-correct note spelling
-  (C7 shows B♭, not A♯), a left-handed mirror, and a chords-in-a-key helper.
+- 19 chord qualities (including the two-note power chord), a chord-name parser (`F#m7`, `Bbsus4`),
+  interval-correct note spelling (C7 shows B♭, not A♯), a left-handed mirror, and a chords-in-a-key
+  helper.
 - **Tuner** — listens through the microphone and shows the note and how many cents sharp or flat,
   using autocorrelation with parabolic peak interpolation over a 65–1400 Hz lag range. Also plays
   reference pitches for each string of the current tuning, so it stays useful with the mic refused.
-- **Practice** — an eight-slot strum-pattern sequencer (down / up / muted chunk / rest) with tempo,
-  tap tempo, metronome click and six presets. It can follow a chart, one bar per chord.
+- **Practice** — eight built-in songs (Pau Hana and IZ) as chord roadmaps to play along to, with a
+  synthesized drum kit in each song's feel, a four-beat count-in, a loop for any section, tempo at
+  50 / 75 / 100 % of the starting tempo or any BPM, transpose, a beat pulse and strum guide, an
+  "easy E" (E5) for ukulele, favourites and your own notes per song — all in large print and fully
+  offline. Below the songs sits the eight-slot strum-pattern sequencer (down / up / muted chunk /
+  rest) with tempo, tap tempo, metronome click and six presets; it can follow a chart, one bar per
+  chord. Chord names only — no lyrics.
 - **Charts** — as many saved chord charts as you like: name, duplicate, delete, reorder.
 
 The four sections are tabs, so a phone shows one at a time rather than one long scroll.

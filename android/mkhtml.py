@@ -36,7 +36,7 @@ HEAD = '''<!doctype html>
   /* Native-app affordances: no text selection or long-press callout on controls. */
   body{-webkit-user-select:none; user-select:none; -webkit-tap-highlight-color:transparent;
        -webkit-touch-callout:none; overscroll-behavior-y:none}
-  input[type=text]{-webkit-user-select:text; user-select:text}
+  input[type=text], textarea{-webkit-user-select:text; user-select:text}
 </style>
 ''' % title
 
