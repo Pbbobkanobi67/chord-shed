@@ -1278,27 +1278,38 @@ function generate(tuning, rootPc, type, tuningId){
 }
 
 /* =====================================================================
-   Audio: Karplus-Strong pluck, strum, metronome click
+   Audio: Karplus-Strong pluck, strum, metronome click, drum kit
    ===================================================================== */
 /* Per-instrument voice. t60: seconds for a mid note to fall 60 dB.
    S: loss-filter weight (0.5 = darkest; lower lets upper harmonics ring).
    pick: pluck point as a fraction of the string (sets the comb notches).
-   body: peaking filters standing in for the soundbox resonances. */
+   body: peaking filters standing in for the soundbox resonances.
+   Optional, ukulele only so the guitar is untouched:
+   tiers: bright/noise per strum strength (soft, medium, hard) - a harder
+     strum excites more upper harmonics. Picked from the note's gain.
+   pickVar: per-note pluck-point spread, so the strings of one chord do not
+     all share the same comb notches.  topBright: extra brightness for the
+     re-entrant g, the thinnest and brightest string on a high-G uke.
+   shelf: [Hz, dB] high shelf - presence so chords sit forward on a phone. */
 const VOICES = {
   guitar:  {dur:3.4, t60:4.8, S:0.36, bright:0.6, pick:0.17, noise:0.45, detune:0.0009, gap:0.030, click:0.10,
             body:[[98,2.4,5],[205,2.2,3.5],[420,1.4,-2],[2600,1.0,2.5]], lp:8500, hp:70},
   ukulele: {dur:2.6, t60:3.0, S:0.47, bright:0.4, pick:0.24, noise:0.28, detune:0.0006, gap:0.020, click:0.03,
-            body:[[270,2.2,4.5],[540,2.0,2.5],[1150,1.6,1.5]], lp:5200, hp:140}
+            tiers:[{bright:0.30, noise:0.20}, {bright:0.40, noise:0.28}, {bright:0.56, noise:0.38}],
+            pickVar:0.04, topBright:0.08,
+            /* nylon soundbox: the old 270/540/1150 set plus the lower 230/480/950/1800 modes */
+            body:[[230,1.8,2.5],[285,2.2,3.0],[480,1.8,2.0],[560,2.0,1.5],[950,1.5,1.5],[1150,1.6,1.0],[1800,1.4,1.2]],
+            shelf:[2800,2.0], lp:5200, hp:140}
 };
 
 const audio = {
-  ctx:null, cache:{}, out:null, buses:{},
+  ctx:null, cache:{}, out:null, buses:{}, comp:null, live:{},
   ready:function(){
     if (this.ctx) return this.ctx;
     const AC = window.AudioContext || window.webkitAudioContext;
     if (!AC) return null;
     const ctx = this.ctx = new AC();
-    const comp = ctx.createDynamicsCompressor();
+    const comp = this.comp = ctx.createDynamicsCompressor();
     comp.threshold.value = -16; comp.ratio.value = 3; comp.attack.value = 0.004; comp.release.value = 0.2;
     const master = ctx.createGain(); master.gain.value = 0.95;
     comp.connect(master); master.connect(ctx.destination);
@@ -1318,12 +1329,18 @@ const audio = {
         f.type = 'peaking'; f.frequency.value = b[0]; f.Q.value = b[1]; f.gain.value = b[2];
         node.connect(f); node = f;
       });
+      if (V.shelf){
+        const sh = ctx.createBiquadFilter();
+        sh.type = 'highshelf'; sh.frequency.value = V.shelf[0]; sh.gain.value = V.shelf[1];
+        node.connect(sh); node = sh;
+      }
       const lp = ctx.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = V.lp; lp.Q.value = 0.5;
       node.connect(lp);
       lp.connect(comp);
       const send = ctx.createGain(); send.gain.value = 1;
       lp.connect(send); send.connect(verb);
       self.buses[name] = hp;
+      self.live[name] = [];
     });
     this.out = this.buses.guitar;
     return ctx;
@@ -1350,27 +1367,46 @@ const audio = {
     if (c && c.state === 'suspended') c.resume();
     return c;
   },
-  buffer:function(midi, tone){
-    const key = midi + ':' + tone;
+  /* Which brightness tier a note of this gain renders at. Voices without
+     tiers (guitar) always get 0, and their cache keys stay as they were. */
+  tierFor:function(V, gain){
+    if (!V.tiers) return 0;
+    return gain < 0.42 ? 0 : (gain < 0.52 ? 1 : 2);
+  },
+  /* tier: 0 soft .. 2 hard. top: 1 for the re-entrant g string of a high-G uke. */
+  buffer:function(midi, tone, tier, top){
+    tier = tier || 0; top = top || 0;
+    const key = midi + ':' + tone + (tier || top ? ':' + tier + top : '');
     if (this.cache[key]) return this.cache[key];
     const ctx = this.ctx, sr = ctx.sampleRate, freq = midiToFreq(midi);
     const V = VOICES[tone] || VOICES.guitar;
-    const N = Math.floor(sr * V.dur);
-    const buf = ctx.createBuffer(1, N, sr), d = buf.getChannelData(0);
     /* low strings ring longer than high ones */
     const t60 = V.t60 * Math.pow(2, -(midi - 52) / 30);
+    /* a note that has fallen 60 dB needs no more buffer; keeps the tiered
+       uke cache about the size the single-tier one was. Untiered voices
+       (guitar) keep their full length so they render exactly as before. */
+    const N = Math.floor(sr * (V.tiers ? Math.min(V.dur, Math.max(1.2, t60 * 0.85)) : V.dur));
+    const buf = ctx.createBuffer(1, N, sr), d = buf.getChannelData(0);
+    /* pluck parameters for this render: strength tier, then the per-note
+       pluck point (a fixed spread from the midi number, so a chord's strings
+       differ while every render of a note is identical), then the g string */
+    const T = V.tiers ? V.tiers[tier] : V;
+    const P = {bright:T.bright, noise:T.noise, pick:V.pick};
+    if (V.pickVar) P.pick += ((midi * 7) % 9 - 4) / 4 * V.pickVar;
+    if (top && V.topBright){ P.bright += V.topBright; P.pick += 0.03; }
     /* two polarisations of the same string, slightly apart in pitch and decay:
        their beating is what keeps a real string from sounding static */
-    this.pluck(d, sr, freq, t60, V, 0.68);
-    this.pluck(d, sr, freq * (1 + V.detune), t60 * 0.75, V, 0.32);
-    /* pick / fingernail transient */
-    if (V.click > 0){
+    this.pluck(d, sr, freq, t60, V, 0.68, P);
+    this.pluck(d, sr, freq * (1 + V.detune), t60 * 0.75, V, 0.32, P);
+    /* pick / fingernail transient, a little more of it on a hard strum */
+    const click = V.click * (V.tiers ? 0.6 + 0.3 * tier : 1);
+    if (click > 0){
       const cn = Math.floor(sr * 0.004);
       let hp = 0, last = 0;
       for (let i = 0; i < cn; i++){
         const w = Math.random() * 2 - 1;
         hp = 0.7 * (hp + w - last); last = w;
-        d[i] += hp * V.click * (1 - i / cn);
+        d[i] += hp * click * (1 - i / cn);
       }
     }
     let peak = 0;
@@ -1385,8 +1421,10 @@ const audio = {
   },
   /* Extended Karplus-Strong, summed into out. The loop delay is split into an
      integer line plus an allpass fraction so every note is in tune; the plain
-     integer version drifts flat by up to ~15 cents on the top strings. */
-  pluck:function(out, sr, freq, t60, V, amp){
+     integer version drifts flat by up to ~15 cents on the top strings.
+     P (optional) overrides the voice's bright / noise / pick for this render. */
+  pluck:function(out, sr, freq, t60, V, amp, P){
+    P = P || V;
     const S = V.S;
     let D = sr / freq - S;
     let Ni = Math.floor(D), frac = D - Ni;
@@ -1398,12 +1436,12 @@ const audio = {
        as 1/n^2, so the fundamental carries the weight), a little noise for texture,
        then a low-pass for how hard the pick or finger is. DC removed. */
     const line = new Float32Array(Ni);
-    const pk = Math.min(Ni - 1, Math.max(1, Math.round(V.pick * Ni)));
+    const pk = Math.min(Ni - 1, Math.max(1, Math.round(P.pick * Ni)));
     let lp = 0, mean = 0;
     for (let k = 0; k < 2; k++){              /* two passes: settle the filter, then write */
       for (let i = 0; i < Ni; i++){
         const tri = i < pk ? i / pk : (Ni - i) / (Ni - pk);
-        lp += V.bright * ((tri + V.noise * (Math.random() * 2 - 1)) - lp);
+        lp += P.bright * ((tri + P.noise * (Math.random() * 2 - 1)) - lp);
         if (k) line[i] = lp;
       }
     }
@@ -1420,10 +1458,12 @@ const audio = {
       idx = idx + 1 === Ni ? 0 : idx + 1;
     }
   },
-  note:function(midi, when, gain, tone, pan){
+  /* top (optional): 1 marks the re-entrant g string; see buffer. */
+  note:function(midi, when, gain, tone, pan, top){
     const ctx = this.ready(); if (!ctx) return;
+    const V = VOICES[tone] || VOICES.guitar;
     const src = ctx.createBufferSource();
-    src.buffer = this.buffer(midi, tone);
+    src.buffer = this.buffer(midi, tone, this.tierFor(V, gain), top);
     const g = ctx.createGain(); g.gain.value = gain;
     src.connect(g);
     if (pan && ctx.createStereoPanner){
@@ -1431,15 +1471,43 @@ const audio = {
       g.connect(p); p.connect(this.bus(tone));
     } else g.connect(this.bus(tone));
     src.start(when);
+    /* remembered so the next strum can damp it; see damp. Notes that have
+       already rung out are dropped here too, so tuner-only use (notes, never
+       a strum) cannot grow the list. */
+    const list = this.live[tone] || (this.live[tone] = []);
+    const now = ctx.currentTime;
+    for (let i = list.length - 1; i >= 0; i--) if (list[i].end <= now) list.splice(i, 1);
+    list.push({src:src, g:g, gain:gain, start:when, end:when + src.buffer.duration, damped:false});
+  },
+  /* A new strum takes over the strings: whatever is still ringing from the
+     last one fades over 60 ms from time t, instead of every strum stacking
+     on the ones before it. Notes that start after t (scheduled ahead, or the
+     new strum's own) are left alone, and a note is only ever damped once. */
+  damp:function(tone, t){
+    const list = this.live[tone]; if (!list) return;
+    const ctx = this.ctx, now = ctx.currentTime;
+    for (let i = list.length - 1; i >= 0; i--){
+      const e = list[i];
+      if (e.end <= now){ list.splice(i, 1); continue; }
+      if (e.damped || e.start > t) continue;
+      e.g.gain.setValueAtTime(e.gain, t);
+      e.g.gain.linearRampToValueAtTime(0, t + 0.06);
+      e.src.stop(t + 0.08);
+      e.damped = true; e.end = t + 0.08;
+    }
   },
   /* dir: 'down' low-to-high, 'up' high-to-low. muted: short damped chunk. */
   strum:function(midis, tone, at, dir, muted){
     const ctx = this.ready(); if (!ctx) return;
     const t0 = at || ctx.currentTime + 0.02;
     const V = VOICES[tone] || VOICES.guitar;
+    this.damp(tone, t0);
     /* slightly uneven spacing, like a real hand */
     const gap = V.gap * (muted ? 0.5 : 1) * (0.9 + Math.random() * 0.2);
     const n = midis.length;
+    /* re-entrant tuning (high-G uke): string 0 sounds above string 1 */
+    const reentrant = n === 4 && midis[0] !== null && midis[0] !== undefined &&
+                      midis[1] !== null && midis[1] !== undefined && midis[0] > midis[1];
     const order = [];
     for (let i = 0; i < n; i++) order.push(i);
     if (dir === 'up') order.reverse();
@@ -1461,7 +1529,7 @@ const audio = {
         src.connect(lp); lp.connect(g); g.connect(audio.bus(tone));
         src.start(t); src.stop(t + 0.1);
       } else {
-        audio.note(m, t, gain, tone, pan);
+        audio.note(m, t, gain, tone, pan, reentrant && si === 0 ? 1 : 0);
       }
     });
   },
@@ -1478,31 +1546,256 @@ const audio = {
   }
 };
 
-/* STUB: replaced by the audio branch on merge */
-/* The practice songs call drums.setLevel / hit / schedule / countIn / level. This bare
-   version keeps the branch runnable on its own: tone bursts on a straight kit pattern. */
+/* ---------------------------------------------------------------------
+   Drums: a small synthesized kit and four backing feels
+   --------------------------------------------------------------------- */
+/* Every sound is rendered once into a buffer (no samples, nothing fetched),
+   then a hit is just a buffer source and a gain, cheap enough for a phone.
+   The kit runs through its own gain and a gentle compressor into the master
+   compressor, so the drums sit under the strings and never clip them.
+
+   Patterns are 16 sixteenths per bar, one string per instrument:
+   '.' rest, 'X' accent, 'x' normal, 'o' soft, 'q' very quiet.
+   bar(barIndex) returns the strings for that bar, so a feel can put a small
+   fill on the last bar of every four and an open hat into the next phrase. */
+const DRUM_FEELS = ['island','pop','ballad','swing'];
+const DRUM_VEL = {'X':1.0, 'x':0.72, 'o':0.45, 'q':0.25};
+const DRUM_PATTERNS = {
+  /* reggae one-drop, laid back: kick and cross-stick together on 3, the hat
+     skank accents the off-beats, a quiet shaker runs sixteenths */
+  island: function(bar){
+    const last = bar % 4 === 3;
+    return {
+      kick:   '........X.......',
+      rim:    last ? '........X...o.xo' : '........X.......',
+      hatC:   'o.X.o.X.o.X.o.X.',
+      hatO:   bar % 2 === 1 || last ? '..............x.' : '................',
+      shaker: 'qqoqqqoqqqoqqqoq'
+    };
+  },
+  /* straight island-pop: kick on 1 and the and of 3 (4 lightly), snare 2 and 4 */
+  pop: function(bar){
+    const fill = bar % 8 === 7;
+    return {
+      kick:   'X.........x.o...',
+      snare:  fill ? '....X.......Xoxo' : '....X.......X...',
+      hatC:   'X.x.x.x.X.x.x.x.',
+      hatO:   bar % 4 === 3 ? '..............x.' : '................'
+    };
+  },
+  /* IZ slow: everything soft - kick 1 and 3, cross-stick 2 and 4, quiet hats
+     and a whisper of shaker. Has to stay gentle under Over the Rainbow. */
+  ballad: function(bar){
+    const last = bar % 4 === 3;
+    return {
+      kick:   'o.......o.......',
+      rim:    last ? '....x.......x.o.' : '....x.......x...',
+      hatC:   'o.o.o.o.o.o.o.o.',
+      shaker: last ? 'qqqqqqqqqqqqqqoq' : 'qqqqqqqqqqqqqqqq'
+    };
+  },
+  /* hapa-haole bounce: kick 1 and 3, brushed snare 2 and 4, swung hats
+     (the swing itself comes from schedule), an open hat now and then on the
+     and of 2 */
+  swing: function(bar){
+    const last = bar % 4 === 3;
+    return {
+      kick:   'x.......x.......',
+      snare:  last ? '....o.......o.x.' : '....o.......o...',
+      hatC:   'x.o.x.o.x.o.x.o.',
+      hatO:   bar % 2 === 1 ? '......x.........' : '................'
+    };
+  }
+};
+
 const drums = {
-  level:0.8,
-  setLevel:function(v){ this.level = Math.max(0, Math.min(1, +v || 0)); },
+  level:0.8, gainNode:null, cache:{}, openHat:null,
+  /* The kit's bus: gain -> gentle compressor -> the master compressor. */
+  ready:function(){
+    const ctx = audio.ready(); if (!ctx) return null;
+    if (this.gainNode) return ctx;
+    const g = ctx.createGain(); g.gain.value = this.level;
+    const comp = ctx.createDynamicsCompressor();
+    comp.threshold.value = -18; comp.ratio.value = 2.5; comp.knee.value = 12;
+    comp.attack.value = 0.003; comp.release.value = 0.15;
+    g.connect(comp); comp.connect(audio.comp);
+    this.gainNode = g;
+    return ctx;
+  },
+  setLevel:function(v){
+    v = Math.min(1, Math.max(0, +v || 0));
+    this.level = v;
+    if (this.gainNode) this.gainNode.gain.setTargetAtTime(v, audio.ctx.currentTime, 0.02);
+  },
+  /* --- synthesis helpers, all offline into a Float32Array --- */
+  /* RBJ biquad run in place over d. type: 'bp' | 'hp' | 'lp'. */
+  filter:function(d, sr, type, f0, Q){
+    const w = 2 * Math.PI * f0 / sr, cw = Math.cos(w), sw = Math.sin(w), al = sw / (2 * Q);
+    let b0, b1, b2;
+    if (type === 'bp'){ b0 = al; b1 = 0; b2 = -al; }
+    else if (type === 'hp'){ b0 = (1 + cw) / 2; b1 = -(1 + cw); b2 = (1 + cw) / 2; }
+    else { b0 = (1 - cw) / 2; b1 = 1 - cw; b2 = (1 - cw) / 2; }
+    const a0 = 1 + al, a1 = -2 * cw, a2 = 1 - al;
+    b0 /= a0; b1 /= a0; b2 /= a0;
+    const na1 = a1 / a0, na2 = a2 / a0;
+    let x1 = 0, x2 = 0, y1 = 0, y2 = 0;
+    for (let i = 0; i < d.length; i++){
+      const x = d[i];
+      const y = b0 * x + b1 * x1 + b2 * x2 - na1 * y1 - na2 * y2;
+      x2 = x1; x1 = x; y2 = y1; y1 = y;
+      d[i] = y;
+    }
+  },
+  noise:function(n){
+    const d = new Float32Array(n);
+    for (let i = 0; i < n; i++) d[i] = Math.random() * 2 - 1;
+    return d;
+  },
+  /* Renders one sound. Each recipe writes into d (length secs*sr) and is then
+     normalised to peak, so the relative levels live in one place here. */
+  buffer:function(name){
+    if (this.cache[name]) return this.cache[name];
+    const ctx = audio.ctx, sr = ctx.sampleRate;
+    const self = this;
+    let secs = 0.4, peak = 0.9;
+    let d;
+    function env(tau){ return function(i){ return Math.exp(-i / sr / tau); }; }
+    if (name === 'kick'){
+      /* sine sweeping ~150 -> 48 Hz over the first 40 ms, a 300 ms body,
+         a short click, then a soft clip for warmth */
+      secs = 0.45; peak = 0.9;
+      d = new Float32Array(Math.floor(sr * secs));
+      let ph = 0;
+      const e = env(0.085);
+      for (let i = 0; i < d.length; i++){
+        const t = i / sr;
+        const f = 48 + 102 * Math.exp(-t / 0.014);
+        ph += 2 * Math.PI * f / sr;
+        d[i] = Math.sin(ph) * e(i) * Math.min(1, t / 0.0015);
+      }
+      const click = self.noise(Math.floor(sr * 0.006));
+      self.filter(click, sr, 'hp', 2500, 0.7);
+      for (let i = 0; i < click.length; i++) d[i] += click[i] * 0.35 * (1 - i / click.length);
+      for (let i = 0; i < d.length; i++) d[i] = Math.tanh(1.7 * d[i]) / Math.tanh(1.7);
+    } else if (name === 'snare' || name === 'snareGhost'){
+      /* a 190 Hz tone burst for the shell plus band-passed noise for the wires;
+         the ghost / brushed one is mostly wires and shorter */
+      const ghost = name === 'snareGhost';
+      secs = 0.3; peak = ghost ? 0.5 : 0.75;
+      d = new Float32Array(Math.floor(sr * secs));
+      const wires = self.noise(d.length);
+      self.filter(wires, sr, 'bp', 2500, 0.6);
+      self.filter(wires, sr, 'hp', 1400, 0.7);
+      const eT = env(ghost ? 0.03 : 0.05), eN = env(ghost ? 0.045 : 0.06);
+      let ph1 = 0, ph2 = 0;
+      for (let i = 0; i < d.length; i++){
+        ph1 += 2 * Math.PI * 190 / sr; ph2 += 2 * Math.PI * 330 / sr;
+        const tone = (Math.sin(ph1) * 0.8 + Math.sin(ph2) * 0.3) * eT(i) * (ghost ? 0.3 : 1);
+        d[i] = tone + wires[i] * eN(i) * (ghost ? 1.1 : 0.9);
+      }
+    } else if (name === 'rim'){
+      /* cross-stick: a 50 ms band-passed knock around 2.5 kHz plus an 800 Hz tick */
+      secs = 0.08; peak = 0.55;
+      d = self.noise(Math.floor(sr * secs));
+      self.filter(d, sr, 'bp', 2500, 2.2);
+      const e = env(0.011);
+      let ph = 0;
+      for (let i = 0; i < d.length; i++){
+        ph += 2 * Math.PI * 800 / sr;
+        d[i] = d[i] * e(i) + Math.sin(ph) * Math.exp(-i / sr / 0.008) * 0.5;
+      }
+    } else if (name === 'hatC' || name === 'hatO'){
+      /* high-passed noise with a tiny metallic ring; open just decays longer */
+      const open = name === 'hatO';
+      secs = open ? 0.45 : 0.09; peak = open ? 0.34 : 0.36;
+      d = self.noise(Math.floor(sr * secs));
+      self.filter(d, sr, 'hp', 7000, 0.8);
+      const e = env(open ? 0.09 : 0.013), eR = env(open ? 0.08 : 0.02);
+      let p1 = 0, p2 = 0, p3 = 0;
+      for (let i = 0; i < d.length; i++){
+        p1 += 2 * Math.PI * 5620 / sr; p2 += 2 * Math.PI * 8170 / sr; p3 += 2 * Math.PI * 10300 / sr;
+        const ring = (Math.sin(p1) + Math.sin(p2) * 0.7 + Math.sin(p3) * 0.5) * 0.12 * eR(i);
+        d[i] = d[i] * e(i) + ring;
+      }
+    } else if (name === 'shaker'){
+      /* band-passed noise 4-8 kHz with a soft attack */
+      secs = 0.1; peak = 0.3;
+      d = self.noise(Math.floor(sr * secs));
+      self.filter(d, sr, 'bp', 5600, 1.1);
+      for (let i = 0; i < d.length; i++){
+        const t = i / sr;
+        d[i] *= (1 - Math.exp(-t / 0.008)) * Math.exp(-t / 0.022);
+      }
+    } else {
+      /* stick: the count-in - a wood-block-ish 1.5 kHz burst, 30 ms */
+      secs = 0.05; peak = 0.6;
+      d = self.noise(Math.floor(sr * secs));
+      self.filter(d, sr, 'bp', 1500, 6);
+      let ph = 0;
+      for (let i = 0; i < d.length; i++){
+        ph += 2 * Math.PI * 1500 / sr;
+        d[i] = (d[i] * 2.5 + Math.sin(ph) * 0.6) * Math.exp(-i / sr / 0.007);
+      }
+    }
+    let mx = 0;
+    for (let i = 0; i < d.length; i++){ const a = Math.abs(d[i]); if (a > mx) mx = a; }
+    const norm = mx > 0 ? peak / mx : 1;
+    const buf = ctx.createBuffer(1, d.length, sr), out = buf.getChannelData(0);
+    for (let i = 0; i < d.length; i++) out[i] = d[i] * norm;
+    this.cache[name] = buf;
+    return buf;
+  },
+  /* 0..1 from a number, the same every time for the same input */
+  jit:function(x){
+    const s = Math.sin(x * 127.1 + 311.7) * 43758.5453;
+    return s - Math.floor(s);
+  },
+  /* name: kick, snare, rim, hatC, hatO, shaker, stick. vel 0..1.
+     Humanised by +-3 ms and +-10 %. The timing nudge depends only on `when`,
+     so hits written on the same step move together instead of flamming. */
   hit:function(name, when, vel){
-    const ctx = audio.ready(); if (!ctx) return;
-    const o = ctx.createOscillator(), g = ctx.createGain();
-    o.type = name === 'kick' ? 'sine' : 'square';
-    o.frequency.value = {kick:90, snare:220, rim:800, hatC:3000, hatO:3000, shaker:5000, stick:1500}[name] || 1000;
-    const a = (vel === undefined ? 0.8 : vel) * this.level * 0.25;
-    g.gain.setValueAtTime(0.0001, when);
-    g.gain.exponentialRampToValueAtTime(Math.max(0.0001, a), when + 0.003);
-    g.gain.exponentialRampToValueAtTime(0.0001, when + (name === 'kick' ? 0.18 : 0.05));
-    o.connect(g); g.connect(ctx.destination);
-    o.start(when); o.stop(when + 0.2);
+    const ctx = this.ready(); if (!ctx) return;
+    vel = Math.min(1, Math.max(0, vel === undefined ? 0.8 : vel));
+    if (vel <= 0) return;
+    const t = when + (this.jit(when) - 0.5) * 0.006;
+    vel *= 0.9 + 0.2 * this.jit(when + name.length);
+    const which = name === 'snare' && vel < 0.5 ? 'snareGhost' : name;
+    const src = ctx.createBufferSource();
+    src.buffer = this.buffer(which);
+    const g = ctx.createGain(); g.gain.value = Math.pow(vel, 1.4);
+    src.connect(g); g.connect(this.gainNode);
+    /* a closed hat chokes an open one still ringing */
+    if (name === 'hatC' && this.openHat && this.openHat.t < t && this.openHat.end > t){
+      const o = this.openHat;
+      o.g.gain.setValueAtTime(o.g.gain.value, t);
+      o.g.gain.linearRampToValueAtTime(0, t + 0.02);
+      o.src.stop(t + 0.03);
+      this.openHat = null;
+    }
+    if (name === 'hatO') this.openHat = {src:src, g:g, t:t, end:t + src.buffer.duration};
+    src.start(Math.max(t, ctx.currentTime));
   },
+  /* One 4/4 bar. barStart in context time, beat = seconds per quarter note,
+     swing 0..0.5 delays every step that is not on a beat by swing * eighth. */
   schedule:function(feel, barStart, beat, barIndex, swing){
-    const back = feel === 'island' || feel === 'ballad' ? 'rim' : 'snare';
-    this.hit('kick', barStart, 0.9); this.hit(back, barStart + beat, 0.7);
-    this.hit('kick', barStart + 2 * beat, 0.8); this.hit(back, barStart + 3 * beat, 0.7);
-    for (let i = 0; i < 8; i++) this.hit('hatC', barStart + i * beat / 2 + (i % 2 ? (swing || 0) * beat / 2 : 0), 0.4);
+    if (!this.ready()) return;
+    const pat = (DRUM_PATTERNS[feel] || DRUM_PATTERNS.island)(barIndex || 0);
+    const six = beat / 4, late = (swing || 0) * beat / 2;
+    const self = this;
+    Object.keys(pat).forEach(function(name){
+      const row = pat[name];
+      for (let s = 0; s < 16; s++){
+        const v = DRUM_VEL[row[s]];
+        if (!v) continue;
+        self.hit(name, barStart + s * six + (s % 4 ? late : 0), v);
+      }
+    });
   },
-  countIn:function(start, beat){ for (let i = 0; i < 4; i++) this.hit('stick', start + i * beat, i === 0 ? 1 : 0.7); }
+  /* Four stick clicks on the beats, the first accented. */
+  countIn:function(start, beat){
+    if (!this.ready()) return;
+    for (let i = 0; i < 4; i++) this.hit('stick', start + i * beat, i === 0 ? 1 : 0.7);
+  }
 };
 
 /* =====================================================================
