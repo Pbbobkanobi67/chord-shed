@@ -230,6 +230,129 @@ input[type=range]{flex:1 1 150px; min-width:120px; accent-color:var(--accent)}
 .nowplaying small{display:block; font:400 11px/1.4 "IBM Plex Mono",monospace; color:var(--ink-3);
   letter-spacing:.06em; margin-top:5px; font-family:"IBM Plex Mono",monospace}
 
+/* ---------- songs ---------- */
+/* Large print for playing along outdoors: 19px body, big chord names, 48px targets, nothing
+   lighter than --ink-2 to read. Scoped to .songs so the rest of the app keeps its sizes. */
+.songs{font-size:19px; line-height:1.4; margin-bottom:22px}
+.songs *{min-width:0}
+.songs [hidden], .pracgrid[hidden]{display:none !important}
+.songs .card{padding:16px}
+.songs .sechead h2{font-size:28px}
+.songs h3{font-family:"Bodoni Moda",Georgia,serif; font-weight:600; font-size:24px; margin:0; letter-spacing:-.01em}
+.songs .grp{font:600 15px/1.2 "IBM Plex Sans",sans-serif; letter-spacing:.08em; text-transform:uppercase;
+  color:var(--ink-2); margin:18px 0 8px}
+.songs .grp:first-child{margin-top:4px}
+.songrow{display:flex; align-items:center; gap:12px; width:100%; text-align:left; border:1px solid var(--line);
+  border-radius:12px; padding:14px; background:var(--paper); color:var(--ink); cursor:pointer; margin-bottom:8px}
+.songrow:hover{border-color:var(--line-2)}
+.songrow.fav{border-color:var(--ochre)}
+.songrow.last{box-shadow:0 0 0 2px var(--accent-soft) inset}
+.srmain{flex:1 1 auto; min-width:0; display:flex; flex-direction:column; gap:4px}
+.srtitle{font-family:"Bodoni Moda",Georgia,serif; font-weight:600; font-size:28px; line-height:1.1; letter-spacing:-.01em}
+.srmeta{font-size:18px; color:var(--ink-2)}
+.srchords{font-family:"Bodoni Moda",Georgia,serif; font-size:19px; color:var(--ink)}
+.offline{display:inline-block; align-self:flex-start; font:500 12.5px/1 "IBM Plex Mono",monospace; letter-spacing:.06em;
+  text-transform:uppercase; padding:5px 7px; border-radius:6px; background:var(--accent-soft); color:var(--accent-ink); margin-top:2px}
+.star{flex:0 0 auto; width:52px; height:52px; border-radius:12px; border:1px solid var(--line); background:var(--panel);
+  color:var(--ink-2); font-size:28px; line-height:1; cursor:pointer; padding:0}
+.star[aria-pressed="true"]{color:var(--ochre); border-color:var(--ochre); background:var(--ochre-soft)}
+
+.songhead{display:flex; flex-direction:column; gap:6px; margin-bottom:14px}
+.songs .btn{font-size:17px; min-height:48px; padding:12px 16px; border-radius:11px}
+.songs .btn.back{align-self:flex-start; font-size:18px}
+.songtitle{font-family:"Bodoni Moda",Georgia,serif; font-weight:700; font-size:clamp(30px,8vw,44px); line-height:1.05;
+  margin:4px 0 0; letter-spacing:-.015em; overflow-wrap:anywhere}
+.songartist{margin:0; font-size:19px; color:var(--ink-2)}
+.songmeta{margin:0; font-size:18px; color:var(--ink-2)}
+.transport{display:flex; align-items:center; gap:14px 20px; flex-wrap:wrap; margin-bottom:14px}
+.songs .btn.play{flex:1 1 180px; min-height:60px; font-size:22px; font-weight:600}
+.songs .btn.play.on{background:var(--ochre); border-color:var(--ochre); color:var(--on-accent)}
+.songs .switch{font-size:18px; color:var(--ink); min-height:48px; gap:10px}
+.songs .switch input{width:50px; height:28px; flex:0 0 auto}
+.songs .switch input::after{width:22px; height:22px}
+.songs .switch input:checked::after{transform:translateX(22px)}
+.songs input[type=range]{height:40px; flex:1 1 150px; min-width:120px}
+.songs select{font-size:17px; padding:11px 12px; min-height:48px}
+.songs .seg{align-self:flex-start; flex-wrap:wrap}
+.songs .seg button{font-size:17px; padding:12px 18px; min-height:48px}
+.lbl{font:600 14px/1 "IBM Plex Sans",sans-serif; letter-spacing:.08em; text-transform:uppercase; color:var(--ink-2)}
+.songs .hint{font-size:15px; color:var(--ink-2)}
+
+.nowcard{margin-bottom:14px}
+.countin{display:flex; justify-content:center; gap:18px; margin-bottom:10px}
+.countin span{font-family:"Bodoni Moda",Georgia,serif; font-size:clamp(48px,14vw,72px); line-height:1; color:var(--ink-2); opacity:.35}
+.countin span.on{color:var(--accent); opacity:1}
+.nowrow{display:flex; align-items:center; gap:16px; flex-wrap:wrap}
+/* 120px basis: name + uke diagram (159px) stay side by side at 390px even with a scrollbar */
+.nowmain{flex:1 1 120px; display:flex; flex-direction:column; gap:8px}
+.nowchord{font-family:"Bodoni Moda",Georgia,serif; font-weight:600; font-size:clamp(64px,18vw,96px); line-height:.95; letter-spacing:-.02em}
+.noweasy{font-size:15px; color:var(--accent-ink); font-weight:600}
+.nownext{font-size:32px; line-height:1.1; color:var(--ink-2)}
+.nownext b{font-family:"Bodoni Moda",Georgia,serif; font-weight:600; color:var(--ink)}
+.beats{display:flex; gap:12px; align-items:center; margin-top:6px; min-height:30px}
+.beats span{width:18px; height:18px; border-radius:50%; border:2px solid var(--line-2); transition:transform .08s, background .08s}
+.beats span:first-child{width:26px; height:26px}
+.beats span.on{background:var(--ink); border-color:var(--ink); transform:scale(1.15)}
+.beats span:first-child.on{background:var(--accent); border-color:var(--accent)}
+.nowdiagram{flex:0 1 auto; display:flex; justify-content:center}
+.guide{display:flex; align-items:center; gap:12px; flex-wrap:wrap; margin-top:14px; padding-top:12px; border-top:1px solid var(--line)}
+.guiderow{display:grid; grid-template-columns:repeat(8,minmax(0,1fr)); gap:4px; flex:1 1 260px}
+.gs{display:flex; flex-direction:column; align-items:center; gap:2px; padding:8px 0 6px; border:1px solid var(--line);
+  border-radius:9px; background:var(--paper); min-height:56px}
+.gs b{font-size:26px; line-height:1; font-weight:400}
+.gs small{font:400 12.5px/1 "IBM Plex Mono",monospace; color:var(--ink-2)}
+.gs[data-kind="D"]{background:var(--accent-soft); border-color:var(--accent); color:var(--accent-ink)}
+.gs[data-kind="U"]{background:var(--ochre-soft); border-color:var(--ochre); color:var(--ochre)}
+.gs[data-kind="x"]{background:var(--sunk); border-color:var(--line-2); color:var(--ink-2)}
+.gs[data-kind="-"] b{color:var(--ink-2); opacity:.6}
+.gs.now{outline:3px solid var(--ink); outline-offset:1px}
+.guidepick{display:flex; align-items:center; gap:8px; font-size:16px; color:var(--ink-2)}
+
+.controls{display:grid; grid-template-columns:repeat(auto-fit,minmax(min(100%,300px),1fr)); gap:18px 24px; margin-bottom:14px}
+.ctl{display:flex; flex-direction:column; gap:10px}
+.songs .tempo{gap:12px}
+.bpmval.big{font-size:44px; min-width:120px}
+.bpmval.big small{font-size:13px; color:var(--ink-2)}
+.trrow{display:flex; align-items:center; gap:12px}
+.trrow .btn{width:56px; height:56px; font-size:26px; padding:0; flex:0 0 auto}
+.trout{font-family:"Bodoni Moda",Georgia,serif; font-size:30px; line-height:1.1; flex:1 1 auto}
+.trout small{display:block; font-family:"IBM Plex Sans",sans-serif; font-size:17px; color:var(--ink-2)}
+.switches{gap:12px}
+.levelrow{display:flex; align-items:center; gap:10px}
+.levelrow .lbl{flex:0 0 auto}
+
+.roadmap{display:flex; flex-direction:column; gap:10px; margin-bottom:14px}
+.secard{border:1px solid var(--line); border-radius:14px; background:var(--panel); padding:14px 16px; box-shadow:var(--shadow); cursor:pointer}
+.secard.playing{border-color:var(--accent); box-shadow:0 0 0 2px var(--accent) inset, var(--shadow)}
+.secard.looped{border-color:var(--ochre)}
+.sechd{display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin-bottom:10px}
+.secname{font-family:"Bodoni Moda",Georgia,serif; font-weight:600; font-size:24px; flex:1 1 auto; line-height:1.1}
+.reps{display:inline-flex; align-items:center; gap:4px}
+.reps .rb{width:48px; height:48px; border-radius:10px; border:1px solid var(--line); background:var(--paper); color:var(--ink);
+  cursor:pointer; display:grid; place-items:center; padding:0}
+.reps .rb svg{width:20px; height:20px}
+.reps .rb:disabled{opacity:.35; cursor:default}
+.repn{font:500 18px/1 "IBM Plex Mono",monospace; min-width:44px; text-align:center}
+.loopb[aria-pressed="true"]{background:var(--ochre); border-color:var(--ochre); color:var(--on-accent)}
+.bars{display:flex; flex-wrap:wrap; gap:6px 0}
+.bar{display:inline-flex; align-items:baseline; gap:8px; padding:4px 14px 4px 12px; border-left:2px solid var(--line-2)}
+.bar:first-child{border-left:0; padding-left:0}
+.ch{font-family:"Bodoni Moda",Georgia,serif; font-size:28px; line-height:1.1; padding:2px 6px; border-radius:6px}
+.ch.now{background:var(--accent); color:var(--on-accent)}
+.repnow{font-size:15px; color:var(--ink-2); min-height:1.3em; margin-top:4px}
+
+.songchords{display:flex; flex-wrap:wrap; gap:10px; margin-top:12px}
+.chordcard{flex:1 1 150px; max-width:220px; display:flex; flex-direction:column; align-items:center; gap:4px; padding:10px 8px 6px;
+  border:1px solid var(--line); border-radius:12px; background:var(--paper); color:var(--ink); cursor:pointer}
+.chordcard:hover{border-color:var(--line-2)}
+.chordcard svg.diagram{width:100%; height:auto}
+.ccname{font-family:"Bodoni Moda",Georgia,serif; font-weight:600; font-size:28px; line-height:1}
+.ccname small{display:block; font:600 14px/1.3 "IBM Plex Sans",sans-serif; color:var(--accent-ink); text-align:center}
+.notes label{display:block; font-size:18px; color:var(--ink-2); margin-bottom:8px}
+.songs textarea{width:100%; font:400 19px/1.5 "IBM Plex Sans",sans-serif; color:var(--ink); background:var(--paper);
+  border:1px solid var(--line); border-radius:10px; padding:12px; min-height:140px; resize:vertical;
+  -webkit-user-select:text; user-select:text}
+
 /* ---------- charts ---------- */
 .chartsgrid{display:grid; grid-template-columns:minmax(0,300px) minmax(0,1fr); gap:22px; align-items:start}
 @media (max-width:860px){ .chartsgrid{grid-template-columns:1fr} }
@@ -597,7 +720,99 @@ footer .colophon{flex:1 1 320px; display:flex; flex-direction:column; gap:2px}
 
   <!-- ============ PRACTICE ============ -->
   <section class="view" id="view-practice" hidden>
-    <div class="pracgrid">
+    <div class="songs" id="songsArea">
+      <section class="card" id="songListCard">
+        <div class="sechead">
+          <h2>Songs</h2>
+          <span class="hint">Tap a song to see its roadmap and play along.</span>
+        </div>
+        <div id="songList2"></div>
+      </section>
+
+      <div id="songScreen" hidden>
+        <div class="songhead">
+          <button type="button" class="btn back" id="songBack">‹ Songs</button>
+          <h2 class="songtitle" id="songTitle"></h2>
+          <p class="songartist" id="songArtist"></p>
+          <p class="songmeta" id="songMeta"></p>
+        </div>
+
+        <div class="card transport">
+          <button type="button" class="btn primary play" id="livePlay">Play</button>
+          <label class="switch"><input type="checkbox" id="liveRepeat"> Repeat song</label>
+        </div>
+
+        <div class="card nowcard" id="nowCard">
+          <div class="countin" id="countIn" hidden aria-live="off"><span>1</span><span>2</span><span>3</span><span>4</span></div>
+          <div class="nowrow">
+            <div class="nowmain">
+              <div class="nowchord" id="nowChord">—</div>
+              <div class="noweasy" id="nowEasy" hidden>easy E — two fingers instead of a barre</div>
+              <div class="nownext">Next: <b id="nextChord">—</b></div>
+              <div class="beats" id="beatDots" aria-hidden="true"><span></span><span></span><span></span><span></span></div>
+            </div>
+            <div class="nowdiagram" id="nowDiagram"></div>
+          </div>
+          <div class="guide" id="guideWrap">
+            <div class="guiderow" id="guide"></div>
+            <label class="guidepick">Strum <select id="guidePreset" aria-label="Strum pattern for this song"></select></label>
+          </div>
+        </div>
+
+        <div class="card controls">
+          <div class="ctl">
+            <span class="lbl">Tempo</span>
+            <div class="seg" id="tempoPct" role="group" aria-label="Tempo as a share of the starting tempo">
+              <button type="button" data-pct="50" aria-pressed="false">50%</button>
+              <button type="button" data-pct="75" aria-pressed="false">75%</button>
+              <button type="button" data-pct="100" aria-pressed="true">100%</button>
+            </div>
+            <div class="tempo">
+              <div class="bpmval big" id="liveBpmVal">80<small> BPM</small></div>
+              <input type="range" id="liveBpm" min="40" max="200" value="80" aria-label="Tempo in beats per minute">
+            </div>
+          </div>
+          <div class="ctl">
+            <span class="lbl">Transpose</span>
+            <div class="trrow">
+              <button type="button" class="btn" id="trDown" aria-label="Transpose down a semitone">−</button>
+              <span class="trout" id="trOut">0</span>
+              <button type="button" class="btn" id="trUp" aria-label="Transpose up a semitone">+</button>
+            </div>
+          </div>
+          <div class="ctl">
+            <span class="lbl">Instrument</span>
+            <div class="seg" id="liveInst" role="group" aria-label="Instrument">
+              <button type="button" data-inst="ukulele" aria-pressed="true">Ukulele</button>
+              <button type="button" data-inst="guitar" aria-pressed="false">Guitar</button>
+            </div>
+          </div>
+          <div class="ctl switches">
+            <label class="switch"><input type="checkbox" id="drumsOn"> Drums</label>
+            <div class="levelrow"><span class="lbl">Level</span>
+              <input type="range" id="drumLevel" min="0" max="100" value="80" aria-label="Drum level"></div>
+            <label class="switch"><input type="checkbox" id="guideOn"> Strum guide</label>
+            <label class="switch"><input type="checkbox" id="easyEOn"> Easy E <span class="hint">(E becomes E5 on ukulele)</span></label>
+            <p class="hint" style="margin:0">The metronome click from the strum-pattern card plays only when drums are off.</p>
+          </div>
+        </div>
+
+        <div class="roadmap" id="roadmap"></div>
+
+        <section class="card">
+          <h3>Chords in this song</h3>
+          <div class="songchords" id="songChords"></div>
+          <p class="hint" style="margin:10px 0 0">Tap a chord to hear it.</p>
+        </section>
+
+        <section class="card notes">
+          <label for="songNotes">Your notes — reminders, lyrics you own, anything</label>
+          <textarea id="songNotes" rows="4" spellcheck="false"></textarea>
+        </section>
+      </div>
+    </div>
+
+    <div class="pracgrid" id="pracCards">
       <div class="card" style="padding:18px">
         <div class="sechead">
           <h2>Strum pattern</h2>
@@ -737,6 +952,19 @@ footer .colophon{flex:1 1 320px; display:flex; flex-direction:column; gap:2px}
       </div>
 
       <div class="card" style="padding:16px">
+        <div class="sechead" style="margin-bottom:6px"><h2>Theme</h2></div>
+        <div class="seg" id="themeSeg" role="group" aria-label="Theme">
+          <button type="button" data-theme="system" aria-pressed="true">System</button>
+          <button type="button" data-theme="light" aria-pressed="false">Light</button>
+          <button type="button" data-theme="dark" aria-pressed="false">Dark</button>
+        </div>
+        <p class="hint" style="margin:10px 0 0">
+          System follows your phone. Pick <b>Light</b> for dark text on a light background — easiest to
+          read in the sun.
+        </p>
+      </div>
+
+      <div class="card" style="padding:16px">
         <div class="sechead" style="margin-bottom:6px"><h2>About &amp; data</h2></div>
         <div class="linkrow">
           <a id="lnkSite" href="https://chord-shed.vercel.app">Open the web version</a>
@@ -816,7 +1044,9 @@ const TYPES = [
   {id:'dim',   label:'diminished',       suffix:'dim',   iv:[0,3,6]},
   {id:'dim7',  label:'diminished 7th',   suffix:'dim7',  iv:[0,3,6,9]},
   {id:'m7b5',  label:'half-diminished',  suffix:'m7♭5', iv:[0,3,6,10]},
-  {id:'aug',   label:'augmented',        suffix:'aug',   iv:[0,4,8]}
+  {id:'aug',   label:'augmented',        suffix:'aug',   iv:[0,4,8]},
+  /* last so the quality grid keeps its shape; root and fifth only, the "easy E" on a ukulele */
+  {id:'5',     label:'power chord',      suffix:'5',     iv:[0,7]}
 ];
 const TYPE_BY_ID = {};
 TYPES.forEach(function(t){ TYPE_BY_ID[t.id] = t; });
@@ -862,7 +1092,8 @@ const CURATED = {
     'B♭|maj':[3,2,1,1],'B♭|min':[3,1,1,1],'B♭|7':[1,2,1,1],
     'E♭|maj':[3,3,3,1],'E♭|min':[2,3,3,1],
     'A♭|maj':[5,3,4,3],'C♯|min':[1,1,0,4],
-    'F♯|maj':[3,1,2,1],'F♯|min':[2,1,2,0],'F♯|7':[3,4,2,4]
+    'F♯|maj':[3,1,2,1],'F♯|min':[2,1,2,0],'F♯|7':[3,4,2,4],
+    'E|5':[4,4,0,2]                    /* B E E B: the easy E, no barre */
   },
   'gtr-std': {
     'C|maj':[null,3,2,0,1,0],'C|maj7':[null,3,2,0,0,0],'C|7':[null,3,2,3,1,0],
@@ -878,7 +1109,8 @@ const CURATED = {
     'B♭|maj':[null,1,3,3,3,1],'B♭|min':[null,1,3,3,2,1],
     'C|min':[null,3,5,5,4,3],'F|min':[1,3,3,1,1,1],
     'E♭|maj':[null,6,5,3,4,3],'A♭|maj':[4,6,6,5,4,4],
-    'F♯|min':[2,4,4,2,2,2],'F♯|maj':[2,4,4,3,2,2],'C♯|min':[null,4,6,6,5,4]
+    'F♯|min':[2,4,4,2,2,2],'F♯|maj':[2,4,4,3,2,2],'C♯|min':[null,4,6,6,5,4],
+    'E|5':[0,2,2,null,null,null]
   }
 };
 
@@ -1246,6 +1478,33 @@ const audio = {
   }
 };
 
+/* STUB: replaced by the audio branch on merge */
+/* The practice songs call drums.setLevel / hit / schedule / countIn / level. This bare
+   version keeps the branch runnable on its own: tone bursts on a straight kit pattern. */
+const drums = {
+  level:0.8,
+  setLevel:function(v){ this.level = Math.max(0, Math.min(1, +v || 0)); },
+  hit:function(name, when, vel){
+    const ctx = audio.ready(); if (!ctx) return;
+    const o = ctx.createOscillator(), g = ctx.createGain();
+    o.type = name === 'kick' ? 'sine' : 'square';
+    o.frequency.value = {kick:90, snare:220, rim:800, hatC:3000, hatO:3000, shaker:5000, stick:1500}[name] || 1000;
+    const a = (vel === undefined ? 0.8 : vel) * this.level * 0.25;
+    g.gain.setValueAtTime(0.0001, when);
+    g.gain.exponentialRampToValueAtTime(Math.max(0.0001, a), when + 0.003);
+    g.gain.exponentialRampToValueAtTime(0.0001, when + (name === 'kick' ? 0.18 : 0.05));
+    o.connect(g); g.connect(ctx.destination);
+    o.start(when); o.stop(when + 0.2);
+  },
+  schedule:function(feel, barStart, beat, barIndex, swing){
+    const back = feel === 'island' || feel === 'ballad' ? 'rim' : 'snare';
+    this.hit('kick', barStart, 0.9); this.hit(back, barStart + beat, 0.7);
+    this.hit('kick', barStart + 2 * beat, 0.8); this.hit(back, barStart + 3 * beat, 0.7);
+    for (let i = 0; i < 8; i++) this.hit('hatC', barStart + i * beat / 2 + (i % 2 ? (swing || 0) * beat / 2 : 0), 0.4);
+  },
+  countIn:function(start, beat){ for (let i = 0; i < 4; i++) this.hit('stick', start + i * beat, i === 0 ? 1 : 0.7); }
+};
+
 /* =====================================================================
    State
    ===================================================================== */
@@ -1266,7 +1525,11 @@ const state = {
   charts:[], activeChart:null,
   songs:[], activeSong:null, palSource:'key',
   keyRoot:0, keyMode:'major',
-  bpm:92, pattern:PRESETS[0].p.slice(), click:true, follow:false
+  bpm:92, pattern:PRESETS[0].p.slice(), click:true, follow:false,
+  theme:'system',
+  /* practice songs: switches shared by every song, and what the user set per song */
+  prac:{drums:true, drumLevel:0.8, strumGuide:true, easyE:true, repeat:true, lastSong:null},
+  songPrefs:{}
 };
 
 const $ = function(id){ return document.getElementById(id); };
@@ -1300,7 +1563,8 @@ function save(){
       charts:state.charts, activeChart:state.activeChart,
       songs:state.songs, activeSong:state.activeSong, palSource:state.palSource,
       keyRoot:state.keyRoot, keyMode:state.keyMode, view:state.view,
-      bpm:state.bpm, pattern:state.pattern, click:state.click, follow:state.follow
+      bpm:state.bpm, pattern:state.pattern, click:state.click, follow:state.follow,
+      theme:state.theme, prac:state.prac, songPrefs:state.songPrefs
     }));
   }catch(e){}
 }
@@ -1364,6 +1628,38 @@ function load(){
   state.activeSong = o.activeSong;
   if (typeof o.palSource === 'string') state.palSource = o.palSource;
   if (!activeSong()) state.activeSong = state.songs[0].id;
+
+  if (o.theme === 'light' || o.theme === 'dark' || o.theme === 'system') state.theme = o.theme;
+  /* Practice songs (2.6+). Everything read back is checked: a stray value here would
+     stop the player dead, with no error anyone could see. */
+  if (o.prac && typeof o.prac === 'object'){
+    ['drums','strumGuide','easyE','repeat'].forEach(function(k){
+      if (typeof o.prac[k] === 'boolean') state.prac[k] = o.prac[k];
+    });
+    if (typeof o.prac.drumLevel === 'number' && o.prac.drumLevel >= 0 && o.prac.drumLevel <= 1) state.prac.drumLevel = o.prac.drumLevel;
+    if (typeof o.prac.lastSong === 'string') state.prac.lastSong = o.prac.lastSong;
+  }
+  if (o.songPrefs && typeof o.songPrefs === 'object' && !Array.isArray(o.songPrefs)){
+    Object.keys(o.songPrefs).forEach(function(id){
+      const q = o.songPrefs[id];
+      if (!q || typeof q !== 'object') return;
+      const p = {};                      /* unknown song ids are kept: harmless, and the song may come back */
+      if (typeof q.fav === 'boolean') p.fav = q.fav;
+      if (typeof q.notes === 'string') p.notes = q.notes.slice(0, 4000);
+      if (q.pct === 50 || q.pct === 75 || q.pct === 100) p.pct = q.pct;
+      if (typeof q.bpm === 'number' && q.bpm >= 40 && q.bpm <= 200) p.bpm = Math.round(q.bpm);
+      if (Number.isInteger(q.transpose) && q.transpose >= -6 && q.transpose <= 6) p.transpose = q.transpose;
+      if (typeof q.strum === 'string' && PRESETS.some(function(x){ return x.name === q.strum; })) p.strum = q.strum;
+      if (q.reps && typeof q.reps === 'object' && !Array.isArray(q.reps)){
+        p.reps = {};
+        Object.keys(q.reps).forEach(function(k){
+          const n = q.reps[k];
+          if (/^\d{1,2}$/.test(k) && Number.isInteger(n) && n >= 1 && n <= 8) p.reps[k] = n;
+        });
+      }
+      state.songPrefs[id] = p;
+    });
+  }
 }
 
 /* =====================================================================
@@ -2160,6 +2456,7 @@ const seq = {
   source:null,
   start:function(source){
     const ctx = audio.resume(); if (!ctx) return;
+    if (live.on) live.stop();                 /* one thing plays at a time: the song player yields */
     this.source = source || null;
     this.on = true; this.step = 0; this.bar = 0;
     this.nextTime = ctx.currentTime + 0.12;
@@ -2239,6 +2536,483 @@ const seq = {
     frame();
   }
 };
+
+/* =====================================================================
+   Practice songs: a fixed library of chord roadmaps, the song screen,
+   and the live player (count-in, drums, section loop, transpose).
+   ===================================================================== */
+/* Chord names only, no lyrics. A bar holds 1, 2 or 4 chords: 8, 4 or 2 eighths each. */
+const SONG_GROUPS = [{id:'ph', name:'Pau Hana'}, {id:'iz', name:'IZ / Israel Kamakawiwoʻole'}];
+const SONG_LIBRARY = [
+  {id:'ph-2years', group:'ph', title:'2 Years 2 Eternity', artist:'Pau Hana', bpm:80, feel:'island', swing:0, strum:'Island',
+   sections:[{name:'Intro / Verse', bars:'G D | Em C', reps:2},
+             {name:'Lift', bars:'Am C | G D'},
+             {name:'Chorus', bars:'G Bm | Em C', reps:2},
+             {name:'Bridge / Outro', bars:'Am C | G D | Bm Em | C D | G'}]},
+  {id:'ph-nani', group:'ph', title:'Nani', artist:'Pau Hana', bpm:76, feel:'island', swing:0, strum:'Island',
+   sections:[{name:'Intro / Verse', bars:'A Bm | C#m Bm', reps:2},
+             {name:'Turn', bars:'A Bm | C#m E5'},
+             {name:'Bridge', bars:'A Am | Bm C#m'},
+             {name:'Outro', bars:'A Bm | C#m E5 | A'}]},
+  {id:'ph-islandgirls', group:'ph', title:'Island Girls', artist:'Pau Hana', bpm:92, feel:'island', swing:0, strum:'Island',
+   sections:[{name:'Intro / Verse', bars:'G C | G C', reps:2},
+             {name:'Pre-chorus', bars:'G C | G D'},
+             {name:'Chorus', bars:'G C | G C | G D', reps:2},
+             {name:'Outro', bars:'G C | G C | G'}]},
+  {id:'ph-wakeup', group:'ph', title:'Wake Up My Darling', artist:'Pau Hana', bpm:88, feel:'pop', swing:0, strum:'Folk',
+   sections:[{name:'Intro / Verse', bars:'F Am | Bb C7', reps:2},
+             {name:'Chorus', bars:'F Am | Bb C7 | F'},
+             {name:'Lift', bars:'Bb C7 | F Am | Bb C7'},
+             {name:'Outro', bars:'F Am | Bb C7 | F'}]},
+  {id:'iz-rainbow', group:'iz', title:'Somewhere Over the Rainbow / What a Wonderful World',
+   artist:'Israel Kamakawiwoʻole', bpm:86, feel:'ballad', swing:0, strum:'Island',
+   sections:[{name:'Intro', bars:'C | G | Am | F'},
+             {name:'Rainbow A', bars:'C G | Am F | C G | Am F', reps:2},
+             {name:'Rainbow B', bars:'C Em | F C | F C | G'},
+             {name:'Lift', bars:'E7 Am | F C | F C | G'},
+             {name:'Wonderful World A', bars:'C Em | F C | F C'},
+             {name:'Wonderful World B', bars:'E7 Am | Dm G7 | C'},
+             {name:'Return / Outro', bars:'Dm G7 | C G | Am F | C'}]},
+  {id:'iz-whitesandy', group:'iz', title:'White Sandy Beach of Hawaiʻi', artist:'Israel Kamakawiwoʻole',
+   bpm:72, feel:'ballad', swing:0, strum:'Island',
+   sections:[{name:'Intro', bars:'F | Bb Bbm | F C7'},
+             {name:'Verse', bars:'F | F | Bb Bbm | F C7', reps:2},
+             {name:'Chorus', bars:'C7 Bb | C7 Bb | C7'},
+             {name:'Outro', bars:'F Bb | Bbm F'}]},
+  {id:'iz-hawaii78', group:'iz', title:'Hawaiʻi ’78', artist:'Israel Kamakawiwoʻole', bpm:68, feel:'ballad', swing:0, strum:'Folk',
+   sections:[{name:'Intro / Verse', bars:'D | Bb C | D', reps:2},
+             {name:'Refrain', bars:'Bb C | D', reps:2},
+             {name:'Outro', bars:'Bb C | D'}]},
+  {id:'iz-kahuilawai', group:'iz', title:'Ka Huila Wai', artist:'Israel Kamakawiwoʻole', bpm:104, feel:'swing', swing:0.33, strum:'Eighths',
+   sections:[{name:'Intro', bars:'C C6 | C C6'},
+             {name:'Verse', bars:'C C6 | F C | G7 C', reps:2},
+             {name:'Refrain', bars:'F C | G7 C'},
+             {name:'Lift', bars:'A | F | G7 C'},
+             {name:'Outro', bars:'C C6 | F G7 | C'}]}
+];
+
+/* Parse every bar once. A chord that does not parse is a typo in the table above, so it
+   throws at start-up instead of surfacing as a silent gap in a song on the beach. */
+function buildLibrary(){
+  SONG_LIBRARY.forEach(function(s){
+    s.sections.forEach(function(sec){
+      sec.reps = sec.reps || 1;
+      sec.chords = sec.bars.split('|').map(function(b){
+        const names = b.trim().split(/\s+/).filter(Boolean);
+        if (names.length !== 1 && names.length !== 2 && names.length !== 4){
+          throw new Error('Song library: the bar "' + b.trim() + '" in ' + s.title + ' needs 1, 2 or 4 chords');
+        }
+        return names.map(function(n){
+          const ch = parseChord(n);
+          if (!ch) throw new Error('Song library: cannot read the chord "' + n + '" in ' + s.title);
+          return ch;
+        });
+      });
+    });
+  });
+}
+function songById(id){ return SONG_LIBRARY.find(function(s){ return s.id === id; }) || null; }
+function songPref(id){ return state.songPrefs[id] || (state.songPrefs[id] = {}); }
+/* The tempo the song plays at: a chosen BPM wins, else the % of the starting tempo. */
+function songBpm(s){
+  const p = songPref(s.id);
+  return typeof p.bpm === 'number' ? p.bpm : Math.round(s.bpm * (p.pct || 100) / 100);
+}
+function songStrum(s){
+  const name = songPref(s.id).strum || s.strum;
+  return (PRESETS.find(function(x){ return x.name === name; }) || PRESETS[0]).p;
+}
+function songReps(s, i){
+  const p = songPref(s.id);
+  return (p.reps && p.reps[i]) || s.sections[i].reps;
+}
+/* The chord as shown and played: transposed, then E major becomes E5 on a ukulele when
+   Easy E is on (a barre at the 4th fret is the hardest shape in these songs). */
+function liveChord(ch, tr){
+  const pc = ((ch.pc + tr) % 12 + 12) % 12;
+  if (ch.t === 'maj' && pc === 4 && state.prac.easyE && tuning().inst === 'ukulele') return {pc:4, t:'5', easy:true};
+  return {pc:pc, t:ch.t, easy:false};
+}
+/* Distinct chords in order of appearance. raw: as written, before Easy E. */
+function songChords(s, tr, raw){
+  const out = [], seen = {};
+  s.sections.forEach(function(sec){ sec.chords.forEach(function(bar){ bar.forEach(function(ch){
+    const c = raw ? {pc:((ch.pc + tr) % 12 + 12) % 12, t:ch.t, easy:false} : liveChord(ch, tr);
+    const k = c.pc + '|' + c.t;
+    if (!seen[k]){ seen[k] = 1; out.push(c); }
+  }); }); });
+  return out;
+}
+function songKeyOf(s, tr){
+  const all = [];
+  s.sections.forEach(function(sec){ sec.chords.forEach(function(bar){ bar.forEach(function(ch){
+    all.push({pc:((ch.pc + tr) % 12 + 12) % 12, t:ch.t});
+  }); }); });
+  return theory.detect(all);
+}
+function reducedMotion(){ return !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches); }
+
+let songOpen = null;        /* id of the song on screen, or null for the playlist */
+
+function renderSongList(){
+  $('songList2').innerHTML = SONG_GROUPS.map(function(g){
+    const songs = SONG_LIBRARY.filter(function(s){ return s.group === g.id; })
+      .sort(function(a, b){ return (songPref(b.id).fav ? 1 : 0) - (songPref(a.id).fav ? 1 : 0); });   /* stable: favourites float */
+    return '<h3 class="grp">' + escapeHtml(g.name) + '</h3>' + songs.map(function(s){
+      const p = songPref(s.id), key = songKeyOf(s, 0);
+      const chords = songChords(s, 0, true).map(function(c){ return chordLabel(c.pc, c.t); }).join(' · ');
+      return '<div class="songrow' + (p.fav ? ' fav' : '') + (s.id === state.prac.lastSong ? ' last' : '') +
+        '" data-song="' + s.id + '" role="button" tabindex="0">' +
+        '<div class="srmain"><div class="srtitle">' + escapeHtml(s.title) + '</div>' +
+        '<div class="srmeta">' + escapeHtml(s.artist) + (key ? ' · ' + theory.keyName(key) : '') + ' · ' + s.bpm + ' BPM</div>' +
+        '<div class="srchords">' + chords + '</div>' +
+        '<span class="offline">Saved offline</span></div>' +
+        '<button type="button" class="star" data-fav="' + s.id + '" aria-pressed="' + !!p.fav +
+          '" aria-label="Favourite ' + escapeHtml(s.title) + '">' + (p.fav ? '★' : '☆') + '</button></div>';
+    }).join('');
+  }).join('');
+}
+
+function openSong(id){
+  const s = songById(id); if (!s) return;
+  if (live.on && live.song !== s) live.stop();
+  live.loop = null;
+  songOpen = id; state.prac.lastSong = id; save();
+  $('songListCard').hidden = true; $('songScreen').hidden = false; $('pracCards').hidden = true;
+  renderSong();
+  window.scrollTo(0, 0);
+}
+function closeSong(){
+  if (live.on) live.stop();
+  live.loop = null;
+  songOpen = null;
+  $('songScreen').hidden = true; $('songListCard').hidden = false; $('pracCards').hidden = false;
+  renderSongList();
+  window.scrollTo(0, 0);
+}
+
+/* The whole song screen. Cheap enough to redo on any change; while the song plays it keeps
+   the player's place and repaints the highlight. */
+function renderSong(){
+  const s = songById(songOpen); if (!s) return;
+  const p = songPref(s.id), tr = p.transpose || 0;
+  $('songTitle').textContent = s.title;
+  $('songArtist').textContent = s.artist;
+  const key = songKeyOf(s, 0);
+  $('songMeta').textContent = 'starting tempo ' + s.bpm + ' BPM' + (key ? ' · key of ' + theory.keyName(key) : '');
+
+  const bpm = songBpm(s);
+  $('liveBpmVal').innerHTML = bpm + '<small> BPM</small>';
+  $('liveBpm').value = bpm;
+  Array.prototype.forEach.call($('tempoPct').children, function(b){
+    b.setAttribute('aria-pressed', String(typeof p.bpm !== 'number' && +b.dataset.pct === (p.pct || 100)));
+  });
+
+  const k2 = songKeyOf(s, tr);
+  $('trOut').innerHTML = (tr > 0 ? '+' + tr : tr < 0 ? '−' + (-tr) : '0') +
+    '<small>' + (tr ? 'sounds in ' : 'as written, in ') + (k2 ? theory.keyName(k2) : '') + '</small>';
+  $('trDown').disabled = tr <= -6; $('trUp').disabled = tr >= 6;
+  Array.prototype.forEach.call($('liveInst').children, function(b){
+    b.setAttribute('aria-pressed', String(b.dataset.inst === state.inst));
+  });
+
+  $('liveRepeat').checked = state.prac.repeat;
+  $('drumsOn').checked = state.prac.drums;
+  $('drumLevel').value = Math.round(state.prac.drumLevel * 100);
+  $('guideOn').checked = state.prac.strumGuide;
+  $('easyEOn').checked = state.prac.easyE;
+  $('guideWrap').hidden = !state.prac.strumGuide;
+
+  const pat = songStrum(s);
+  $('guide').innerHTML = pat.map(function(k, i){
+    return '<span class="gs" data-kind="' + k + '"><b>' + GLYPH[k] + '</b><small>' + (i % 2 ? '&amp;' : i / 2 + 1) + '</small></span>';
+  }).join('');
+  $('guidePreset').innerHTML = PRESETS.map(function(x){
+    return '<option value="' + x.name + '">' + x.name + ' ' + x.p.map(function(k){ return GLYPH[k]; }).join('') + '</option>';
+  }).join('');
+  $('guidePreset').value = p.strum || s.strum;
+
+  $('roadmap').innerHTML = s.sections.map(function(sec, i){
+    const reps = songReps(s, i);
+    const bars = sec.chords.map(function(bar, b){
+      return '<span class="bar">' + bar.map(function(ch, ci){
+        const c = liveChord(ch, tr);
+        return '<span class="ch" data-sec="' + i + '" data-bar="' + b + '" data-ci="' + ci + '">' + chordLabel(c.pc, c.t) + '</span>';
+      }).join('') + '</span>';
+    }).join('');
+    return '<div class="secard' + (live.loop === i ? ' looped' : '') + '" data-sec="' + i + '">' +
+      '<div class="sechd"><span class="secname">' + escapeHtml(sec.name) + '</span>' +
+      '<span class="reps"><button type="button" class="rb" data-reps="-1" data-sec="' + i + '" aria-label="Play once fewer"' +
+        (reps <= 1 ? ' disabled' : '') + '>' + ICON_MINUS + '</button><span class="repn">×' + reps + '</span>' +
+      '<button type="button" class="rb" data-reps="1" data-sec="' + i + '" aria-label="Play once more"' +
+        (reps >= 8 ? ' disabled' : '') + '>' + ICON_PLUS + '</button></span>' +
+      '<button type="button" class="btn loopb" data-loop="' + i + '" aria-pressed="' + (live.loop === i) + '">Loop</button></div>' +
+      '<div class="bars">' + bars + '</div><div class="repnow" data-repnow="' + i + '"></div></div>';
+  }).join('');
+
+  $('songChords').innerHTML = songChords(s, tr).map(function(c){
+    const v = generate(tuning(), c.pc, TYPE_BY_ID[c.t], state.tuningId)[0];
+    return '<button type="button" class="chordcard" data-pc="' + c.pc + '" data-t="' + c.t + '" aria-label="Hear ' +
+      chordLabel(c.pc, c.t) + '"><span class="ccname">' + chordLabel(c.pc, c.t) + (c.easy ? '<small>easy E</small>' : '') +
+      '</span>' + (v ? drawDiagram(v, c.pc, c.t, false) : '') + '</button>';
+  }).join('');
+
+  if (document.activeElement !== $('songNotes')) $('songNotes').value = p.notes || '';
+
+  live.svgCache = {}; live.shownLabel = ''; live.shownSec = -1;
+  if (live.on && live.song === s){
+    live.replan();
+    if (live.last) live.paint(live.last);
+  } else {
+    /* before Play: the first chord, so the hand is ready when the count-in ends */
+    const plan = live.buildPlan(s);
+    if (plan.length) renderNow(plan[0].slots[0], live.nextLabel(plan, 0, 0));
+    Array.prototype.forEach.call($('beatDots').children, function(el){ el.classList.remove('on'); });
+  }
+  live.syncButtons();
+}
+
+function renderNow(c, next){
+  $('nowChord').textContent = chordLabel(c.pc, c.t);
+  $('nowEasy').hidden = !c.easy;
+  $('nextChord').textContent = next || '—';
+  const key = state.tuningId + '|' + state.lefty + '|' + c.pc + '|' + c.t + '|' + (window.innerWidth < 520);
+  if (!live.svgCache[key]){
+    const v = generate(tuning(), c.pc, TYPE_BY_ID[c.t], state.tuningId)[0];
+    live.svgCache[key] = v ? drawDiagram(v, c.pc, c.t, false) : '';
+  }
+  $('nowDiagram').innerHTML = live.svgCache[key];
+}
+
+/* The song player. Same shape as seq: a 25 ms scheduler that books audio 120 ms ahead on the
+   AudioContext clock, and a drawQueue the rAF loop drains so the screen follows the sound. */
+const live = {
+  on:false, song:null, plan:[], pos:0, step:0, phase:'count', barCount:0,
+  loop:null,            /* section index to cycle, or null */
+  pendingSec:null,      /* section tapped while playing: jump there at the next bar */
+  ended:false, nextTime:0, timer:null, raf:null, drawQueue:[], last:null, lastChord:null,
+  midiCache:{}, svgCache:{}, shownLabel:'', shownSec:-1, wake:null,
+  bpm:function(){ return this.song ? songBpm(this.song) : state.bpm; },
+  /* Every bar the arrangement plays, in order, with a chord for each of its 8 eighths. */
+  buildPlan:function(s){
+    const tr = songPref(s.id).transpose || 0, out = [];
+    s.sections.forEach(function(sec, i){
+      const reps = songReps(s, i);
+      for (let r = 0; r < reps; r++) sec.chords.forEach(function(bar, b){
+        const cs = bar.map(function(ch){ return liveChord(ch, tr); });
+        const per = 8 / cs.length, slots = [], ci = [];
+        for (let k = 0; k < 8; k++){ const idx = Math.floor(k / per); slots.push(cs[idx]); ci.push(idx); }
+        out.push({sec:i, rep:r, reps:reps, bar:b, slots:slots, ci:ci});
+      });
+    });
+    return out;
+  },
+  firstOf:function(sec){
+    const i = this.plan.findIndex(function(e){ return e.sec === sec; });
+    return i < 0 ? 0 : i;
+  },
+  /* Reps, transpose, Easy E or the instrument changed mid-song: rebuild, keep the place. */
+  replan:function(){
+    const cur = this.plan[this.pos];
+    this.plan = this.buildPlan(this.song);
+    this.midiCache = {};
+    if (!cur){ this.pos = Math.min(this.pos, this.plan.length); return; }
+    let i = this.plan.findIndex(function(e){ return e.sec === cur.sec && e.rep === cur.rep && e.bar === cur.bar; });
+    if (i < 0) i = this.firstOf(cur.sec);
+    this.pos = i;
+  },
+  /* midisFor runs the voicing search, so remember it per chord for this tuning */
+  midis:function(c){
+    const k = state.tuningId + '|' + c.pc + '|' + c.t;
+    if (!this.midiCache[k]) this.midiCache[k] = midisFor(c.pc, c.t);
+    return this.midiCache[k];
+  },
+  start:function(s, fromSec){
+    const ctx = audio.resume(); if (!ctx) return;
+    if (seq.on) seq.stop();
+    if (this.on) this.stop();
+    this.song = s;
+    this.plan = this.buildPlan(s);
+    if (!this.plan.length) return;
+    if (fromSec === undefined && this.loop !== null) fromSec = this.loop;
+    this.pos = fromSec === undefined ? 0 : this.firstOf(fromSec);
+    this.step = 0; this.phase = 'count'; this.barCount = 0; this.ended = false; this.pendingSec = null;
+    this.drawQueue = []; this.last = null; this.lastChord = null; this.shownLabel = ''; this.shownSec = -1;
+    this.midiCache = {};
+    drums.setLevel(state.prac.drumLevel);
+    this.nextTime = ctx.currentTime + 0.1;
+    this.on = true;
+    this.timer = setInterval(this.schedule.bind(this), 25);
+    this.draw();
+    this.wakeOn();
+    this.syncButtons();
+  },
+  stop:function(){
+    this.on = false;
+    if (this.timer) clearInterval(this.timer);
+    if (this.raf) cancelAnimationFrame(this.raf);
+    this.timer = this.raf = null;
+    this.drawQueue = []; this.ended = false; this.pendingSec = null;
+    this.wakeOff();
+    $('countIn').hidden = true;
+    Array.prototype.forEach.call(document.querySelectorAll('#roadmap .secard.playing'), function(el){ el.classList.remove('playing'); });
+    Array.prototype.forEach.call(document.querySelectorAll('#roadmap .ch.now'), function(el){ el.classList.remove('now'); });
+    Array.prototype.forEach.call(document.querySelectorAll('#roadmap .repnow'), function(el){ el.textContent = ''; });
+    Array.prototype.forEach.call($('beatDots').children, function(el){ el.classList.remove('on'); });
+    Array.prototype.forEach.call($('guide').children, function(el){ el.classList.remove('now'); });
+    this.shownLabel = ''; this.shownSec = -1; this.last = null;
+    this.syncButtons();
+  },
+  /* Which bar plays next: a tapped section first, then the loop, then the end of the song. */
+  resolve:function(pos){
+    if (this.pendingSec !== null){ pos = this.firstOf(this.pendingSec); this.pendingSec = null; return pos; }
+    if (this.loop !== null && (pos >= this.plan.length || this.plan[pos].sec !== this.loop)) return this.firstOf(this.loop);
+    if (pos >= this.plan.length) return state.prac.repeat ? 0 : -1;
+    return pos;
+  },
+  schedule:function(){
+    const ctx = audio.ctx; if (!ctx || !this.on || this.ended) return;
+    while (this.nextTime < ctx.currentTime + 0.12){
+      /* tempo is read every pass, so a slider move lands on the next eighth */
+      const eighth = 30 / this.bpm(), beat = eighth * 2, sw = this.song.swing || 0;
+      const when = this.nextTime, step = this.step;
+      if (this.phase === 'count'){
+        if (step === 0 && state.prac.drums) drums.countIn(when, beat);
+        if (step % 2 === 0){
+          if (!state.prac.drums) audio.click(when, step === 0);
+          this.drawQueue.push({t:when, count:step / 2 + 1});
+        }
+      } else {
+        if (step === 0){
+          this.pos = this.resolve(this.pos);
+          if (this.pos < 0){
+            /* Repeat off: finish on one down-strum of the last chord, then stop */
+            const c = this.lastChord;
+            if (c && state.sound) audio.strum(this.midis(c), tuning().inst, when, 'down', false);
+            this.drawQueue.push({t:when, end:true});
+            this.ended = true;
+            return;
+          }
+          if (state.prac.drums) drums.schedule(this.song.feel, when, beat, this.barCount, sw);
+        }
+        const e = this.plan[this.pos], c = e.slots[step], kind = songStrum(this.song)[step];
+        const t = when + (step % 2 ? sw * eighth : 0);         /* swing delays the off-beat eighths */
+        if (state.click && !state.prac.drums && step % 2 === 0) audio.click(when, step === 0);
+        if (state.sound && kind !== '-') audio.strum(this.midis(c), tuning().inst, t, kind === 'U' ? 'up' : 'down', kind === 'x');
+        this.drawQueue.push({t:t, step:step, pos:this.pos, sec:e.sec, bar:e.bar, rep:e.rep, reps:e.reps, ci:e.ci[step], chord:c});
+        this.lastChord = c;
+      }
+      this.nextTime += eighth;
+      this.step++;
+      if (this.step >= 8){
+        this.step = 0;
+        if (this.phase === 'count') this.phase = 'bars';
+        else { this.pos++; this.barCount++; }
+      }
+    }
+  },
+  draw:function(){
+    const self = this;
+    function frame(){
+      if (!self.on) return;
+      const ctx = audio.ctx;
+      if (ctx){
+        let cur = null;
+        while (self.drawQueue.length && self.drawQueue[0].t <= ctx.currentTime) cur = self.drawQueue.shift();
+        if (cur){
+          if (cur.end){ self.stop(); return; }
+          self.paint(cur);
+        }
+      }
+      self.raf = requestAnimationFrame(frame);
+    }
+    frame();
+  },
+  paint:function(ev){
+    if (ev.count){
+      const ci = $('countIn'); ci.hidden = false;
+      Array.prototype.forEach.call(ci.children, function(el, i){ el.classList.toggle('on', i === ev.count - 1); });
+      return;
+    }
+    this.last = ev;
+    $('countIn').hidden = true;
+    const label = chordLabel(ev.chord.pc, ev.chord.t);
+    if (label !== this.shownLabel){
+      this.shownLabel = label;
+      renderNow(ev.chord, this.nextLabel(this.plan, ev.pos, ev.step));
+    }
+    const beat = ev.step >> 1;
+    Array.prototype.forEach.call($('beatDots').children, function(el, i){ el.classList.toggle('on', i === beat); });
+    Array.prototype.forEach.call($('guide').children, function(el, i){ el.classList.toggle('now', i === ev.step); });
+    const road = $('roadmap');
+    if (ev.sec !== this.shownSec){
+      const first = this.shownSec < 0;
+      this.shownSec = ev.sec;
+      Array.prototype.forEach.call(road.children, function(el){
+        const on = +el.dataset.sec === ev.sec;
+        el.classList.toggle('playing', on);
+        /* bring the new section into view, but not on the first bar: the user just pressed Play up top */
+        if (on && !first && state.view === 'practice') el.scrollIntoView({block:'center', behavior:reducedMotion() ? 'auto' : 'smooth'});
+      });
+    }
+    const rep = road.querySelector('[data-repnow="' + ev.sec + '"]');
+    if (rep) rep.textContent = ev.reps > 1 ? 'time ' + (ev.rep + 1) + ' of ' + ev.reps : '';
+    Array.prototype.forEach.call(road.querySelectorAll('.ch.now'), function(el){ el.classList.remove('now'); });
+    const span = road.querySelector('.ch[data-sec="' + ev.sec + '"][data-bar="' + ev.bar + '"][data-ci="' + ev.ci + '"]');
+    if (span) span.classList.add('now');
+  },
+  /* The next different chord after (pos, step), following the loop and repeat rules. */
+  nextLabel:function(plan, pos, step){
+    if (!plan.length) return '';
+    const here = chordLabel(plan[pos].slots[step].pc, plan[pos].slots[step].t);
+    let p = pos, s = step;
+    for (let n = 0; n < plan.length * 8 + 8; n++){
+      s++;
+      if (s >= 8){
+        s = 0; p++;
+        if (this.loop !== null && (p >= plan.length || plan[p].sec !== this.loop)){
+          p = plan.findIndex(function(e){ return e.sec === live.loop; });
+          if (p < 0) p = 0;
+        } else if (p >= plan.length){
+          if (!state.prac.repeat) return '';
+          p = 0;
+        }
+      }
+      const c = plan[p].slots[s], l = chordLabel(c.pc, c.t);
+      if (l !== here) return l;
+    }
+    return '';
+  },
+  /* Keep the screen on while playing; it is the chord chart. Not every WebView grants it. */
+  wakeOn:function(){
+    const self = this;
+    try{
+      if (navigator.wakeLock && navigator.wakeLock.request){
+        navigator.wakeLock.request('screen').then(function(l){
+          self.wake = l;
+          if (!self.on) self.wakeOff();
+        }, function(){});
+      }
+    }catch(e){}
+  },
+  wakeOff:function(){
+    try{ if (this.wake) this.wake.release(); }catch(e){}
+    this.wake = null;
+  },
+  syncButtons:function(){
+    const b = $('livePlay');
+    b.textContent = this.on ? 'Stop' : 'Play';
+    b.classList.toggle('on', this.on);
+    Array.prototype.forEach.call(document.querySelectorAll('#roadmap .loopb'), function(el){
+      const on = live.loop === +el.dataset.loop;
+      el.setAttribute('aria-pressed', String(on));
+      el.closest('.secard').classList.toggle('looped', on);
+    });
+  }
+};
+document.addEventListener('visibilitychange', function(){
+  if (document.visibilityState === 'visible' && live.on) live.wakeOn();
+});
 
 /* =====================================================================
    Tuner
@@ -2688,7 +3462,8 @@ const ALIASES = {
   'add9':'add9','add2':'add9','9':'9','m9':'m9','min9':'m9','maj9':'maj9','M9':'maj9',
   'dim':'dim','o':'dim','°':'dim','dim7':'dim7','o7':'dim7',
   'm7b5':'m7b5','min7b5':'m7b5','halfdim':'m7b5',
-  'aug':'aug','+':'aug','aug5':'aug','+5':'aug'
+  'aug':'aug','+':'aug','aug5':'aug','+5':'aug',
+  '5':'5'
 };
 function parseChord(text){
   const raw = String(text || '').trim().replace(/♯/g,'#').replace(/♭/g,'b');
@@ -2748,9 +3523,15 @@ function renderOptions(){
   const b = bytesUsed();
   const c = state.charts.length;
   const chords = state.charts.reduce(function(a, x){ return a + x.chords.length; }, 0);
+  const ids = Object.keys(state.songPrefs);
+  const favs = ids.filter(function(k){ return state.songPrefs[k].fav; }).length;
+  const noted = ids.filter(function(k){ return typeof state.songPrefs[k].notes === 'string' && state.songPrefs[k].notes.trim(); }).length;
   $('dataRows').innerHTML =
     '<div class="row2"><dt>Saved charts</dt><dd>' + c + ' (' + chords + ' chords)</dd></div>' +
     '<div class="row2"><dt>Song ideas</dt><dd>' + state.songs.length + '</dd></div>' +
+    '<div class="row2"><dt>Practice songs</dt><dd>' + SONG_LIBRARY.length + ' built in · ' + favs +
+      (favs === 1 ? ' favourite' : ' favourites') + '</dd></div>' +
+    '<div class="row2"><dt>Notes</dt><dd>on ' + noted + (noted === 1 ? ' song' : ' songs') + '</dd></div>' +
     '<div class="row2"><dt>Stored on device</dt><dd>' +
       (b < 0 ? 'unavailable' : (b / 1024).toFixed(1) + ' KB') + '</dd></div>';
 
@@ -2945,9 +3726,32 @@ function setChord(pc, tid){
   state.rootPc = pc; state.typeId = tid; state.vIndex = 0;
   renderStage();
 }
+/* The header segment and the song screen's segment do the same thing. */
+function setInstrument(inst){
+  state.inst = inst;
+  state.tuningId = DEFAULT_TUNING[state.inst];
+  Array.prototype.forEach.call($('instSeg').children, function(x){
+    x.setAttribute('aria-pressed', String(x.dataset.inst === state.inst));
+  });
+  buildTuningSel();
+  state.vIndex = 0;
+  renderStage(); tuner.renderStrings(); save();
+  if (songOpen) renderSong();
+}
+/* System / Light / Dark. The CSS already keys off data-theme on <html>; System removes it. */
+function applyTheme(){
+  const t = state.theme;
+  if (t === 'light' || t === 'dark') document.documentElement.dataset.theme = t;
+  else delete document.documentElement.dataset.theme;
+  Array.prototype.forEach.call($('themeSeg').children, function(b){
+    b.setAttribute('aria-pressed', String(b.dataset.theme === (t || 'system')));
+  });
+}
 
 function init(){
+  buildLibrary();                 /* throws on a bad chord in the song table: fail loudly, at start */
   load();
+  applyTheme();
   buildPickers();
   buildTuningSel();
   $('lefty').checked = state.lefty;
@@ -2963,6 +3767,7 @@ function init(){
   });
   renderKey();
   renderPattern();
+  renderSongList();               /* always opens on the playlist; the last song is only marked */
   renderCharts();
   renderStage();
   tuner.renderStrings();
@@ -2980,18 +3785,12 @@ function init(){
   /* --- instrument / tuning --- */
   $('instSeg').addEventListener('click', function(e){
     const b = e.target.closest('button[data-inst]'); if (!b) return;
-    state.inst = b.dataset.inst;
-    state.tuningId = DEFAULT_TUNING[state.inst];
-    Array.prototype.forEach.call($('instSeg').children, function(x){
-      x.setAttribute('aria-pressed', String(x.dataset.inst === state.inst));
-    });
-    buildTuningSel();
-    state.vIndex = 0;
-    renderStage(); tuner.renderStrings(); save();
+    setInstrument(b.dataset.inst);
   });
   $('tuningSel').addEventListener('change', function(e){
     state.tuningId = e.target.value; state.vIndex = 0;
     renderStage(); tuner.renderStrings(); save();
+    if (songOpen) renderSong();
   });
 
   /* --- chord pickers --- */
@@ -3131,6 +3930,112 @@ function init(){
       $('bpmVal').innerHTML = state.bpm + '<small> BPM</small>';
       save();
     }
+  });
+
+  /* --- practice songs --- */
+  $('songList2').addEventListener('click', function(e){
+    const star = e.target.closest('[data-fav]');
+    if (star){
+      const p = songPref(star.dataset.fav);
+      p.fav = !p.fav;
+      save(); renderSongList();
+      return;
+    }
+    const row = e.target.closest('.songrow');
+    if (row) openSong(row.dataset.song);
+  });
+  $('songList2').addEventListener('keydown', function(e){
+    if (e.key !== 'Enter' && e.key !== ' ') return;
+    const row = e.target.closest('.songrow');
+    if (row && e.target === row){ e.preventDefault(); openSong(row.dataset.song); }
+  });
+  $('songBack').addEventListener('click', closeSong);
+  $('livePlay').addEventListener('click', function(){
+    const s = songById(songOpen); if (!s) return;
+    if (live.on) live.stop(); else live.start(s);
+  });
+  $('liveRepeat').addEventListener('change', function(e){ state.prac.repeat = e.target.checked; save(); });
+  $('tempoPct').addEventListener('click', function(e){
+    const b = e.target.closest('[data-pct]'), s = songById(songOpen); if (!b || !s) return;
+    const p = songPref(s.id);
+    p.pct = +b.dataset.pct; p.bpm = null;          /* a % is relative to the song's starting tempo */
+    save(); renderSong();
+  });
+  $('liveBpm').addEventListener('input', function(e){
+    const s = songById(songOpen); if (!s) return;
+    const p = songPref(s.id);
+    p.bpm = Math.min(200, Math.max(40, +e.target.value)); p.pct = null;   /* the slider is absolute: no % applies */
+    $('liveBpmVal').innerHTML = p.bpm + '<small> BPM</small>';
+    Array.prototype.forEach.call($('tempoPct').children, function(x){ x.setAttribute('aria-pressed', 'false'); });
+  });
+  $('liveBpm').addEventListener('change', save);
+  function transposeBy(d){
+    const s = songById(songOpen); if (!s) return;
+    const p = songPref(s.id);
+    p.transpose = Math.min(6, Math.max(-6, (p.transpose || 0) + d));
+    save(); renderSong();
+  }
+  $('trDown').addEventListener('click', function(){ transposeBy(-1); });
+  $('trUp').addEventListener('click', function(){ transposeBy(1); });
+  $('liveInst').addEventListener('click', function(e){
+    const b = e.target.closest('button[data-inst]');
+    if (b) setInstrument(b.dataset.inst);
+  });
+  $('drumsOn').addEventListener('change', function(e){ state.prac.drums = e.target.checked; save(); });
+  $('drumLevel').addEventListener('input', function(e){
+    state.prac.drumLevel = Math.min(1, Math.max(0, +e.target.value / 100));
+    drums.setLevel(state.prac.drumLevel);
+  });
+  $('drumLevel').addEventListener('change', save);
+  $('guideOn').addEventListener('change', function(e){
+    state.prac.strumGuide = e.target.checked;
+    $('guideWrap').hidden = !state.prac.strumGuide;
+    save();
+  });
+  $('easyEOn').addEventListener('change', function(e){ state.prac.easyE = e.target.checked; save(); renderSong(); });
+  $('guidePreset').addEventListener('change', function(){
+    const s = songById(songOpen); if (!s) return;
+    songPref(s.id).strum = this.value;
+    save(); renderSong();
+  });
+  $('roadmap').addEventListener('click', function(e){
+    const s = songById(songOpen); if (!s) return;
+    const rp = e.target.closest('[data-reps]');
+    if (rp){
+      const i = +rp.dataset.sec, p = songPref(s.id);
+      p.reps = p.reps || {};
+      p.reps[i] = Math.min(8, Math.max(1, songReps(s, i) + (+rp.dataset.reps)));
+      save(); renderSong();
+      return;
+    }
+    const lp = e.target.closest('[data-loop]');
+    if (lp){
+      const i = +lp.dataset.loop;
+      live.loop = live.loop === i ? null : i;
+      if (live.loop !== null && !live.on) live.start(s, i);     /* looping also starts playback */
+      live.syncButtons();
+      return;
+    }
+    const card = e.target.closest('.secard');
+    if (card){
+      const i = +card.dataset.sec;
+      if (live.loop !== null && live.loop !== i) live.loop = null;   /* tapping elsewhere lets go of the loop */
+      if (live.on && live.song === s) live.pendingSec = i;           /* jump at the next bar */
+      else live.start(s, i);
+      live.syncButtons();
+    }
+  });
+  $('songChords').addEventListener('click', function(e){
+    const b = e.target.closest('.chordcard'); if (!b) return;
+    audio.resume();
+    audio.strum(midisFor(+b.dataset.pc, b.dataset.t), tuning().inst, 0, 'down', false);
+  });
+  let notesTimer = null;
+  $('songNotes').addEventListener('input', function(){
+    const s = songById(songOpen); if (!s) return;
+    songPref(s.id).notes = this.value.slice(0, 4000);
+    clearTimeout(notesTimer);
+    notesTimer = setTimeout(save, 400);
   });
 
   /* --- charts --- */
@@ -3380,6 +4285,11 @@ function init(){
     }
   });
 
+  $('themeSeg').addEventListener('click', function(e){
+    const b = e.target.closest('button[data-theme]'); if (!b) return;
+    state.theme = b.dataset.theme;
+    applyTheme(); save();
+  });
   $('checkUpd').addEventListener('click', checkUpdates);
   $('updBanGo').addEventListener('click', function(){
     if (this.textContent === 'Allow') Updater.allowInstalls();
@@ -3406,7 +4316,7 @@ function init(){
 
   window.addEventListener('resize', function(){
     clearTimeout(window.__rz);
-    window.__rz = setTimeout(function(){ renderStage(); }, 200);
+    window.__rz = setTimeout(function(){ renderStage(); if (songOpen) renderSong(); }, 200);
   });
   window.addEventListener('pagehide', function(){ if (tuner.on) tuner.stop(); });
 
