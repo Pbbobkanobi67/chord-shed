@@ -1,10 +1,10 @@
 {
   "size": 595665,
-  "versionCode": 17,
-  "versionName": "2.6",
+  "releasedAt": "2026-10-06T13:47:07.307Z",
+  "released": "2026-10-06",
   "notes": "See the release notes on GitHub for what changed.",
-  "released": "2026-10-05",
-  "sha256": "066e67ef2bf11976537dcbc9ca418816e1bc2e9766dcdcdd9b6fcda9bcfe9e54",
-  "releasedAt": "2026-10-06T05:37:37.891Z",
-  "apk": "/dl/chord-shed.apk"
+  "apk": "/dl/chord-shed.apk",
+  "sha256": "8e2ec19dfd8e78765c9861a6e34fe6a70ce4d3b80f5c7dad899511f974a0e81a",
+  "versionName": "2.7",
+  "versionCode": 18
 }

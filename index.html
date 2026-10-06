@@ -2853,7 +2853,7 @@ const SONG_LIBRARY = [
              {name:'Lift', bars:'Am C | G D'},
              {name:'Chorus', bars:'G Bm | Em C', reps:2},
              {name:'Bridge / Outro', bars:'Am C | G D | Bm Em | C D | G'}]},
-  {id:'ph-nani', group:'ph', title:'Nani', artist:'Pau Hana', bpm:76, feel:'island', swing:0, strum:'Island',
+  {id:'ph-nani', group:'ph', title:'Nani', artist:'Pau Hana', bpm:103, feel:'island', swing:0, strum:'Island',
    sections:[{name:'Intro / Verse', bars:'A Bm | C#m Bm', reps:2},
              {name:'Turn', bars:'A Bm | C#m E5'},
              {name:'Bridge', bars:'A Am | Bm C#m'},
@@ -2870,7 +2870,7 @@ const SONG_LIBRARY = [
              {name:'Outro', bars:'F Am | Bb C7 | F'}]},
   {id:'iz-rainbow', group:'iz', title:'Somewhere Over the Rainbow / What a Wonderful World',
    artist:'Israel Kamakawiwoʻole', bpm:86, feel:'ballad', swing:0, strum:'Island',
-   sections:[{name:'Intro', bars:'C | G | Am | F'},
+   sections:[{name:'Intro', bars:'C | Em | Am | F'},
              {name:'Rainbow A', bars:'C G | Am F | C G | Am F', reps:2},
              {name:'Rainbow B', bars:'C Em | F C | F C | G'},
              {name:'Lift', bars:'E7 Am | F C | F C | G'},
@@ -2881,7 +2881,7 @@ const SONG_LIBRARY = [
    bpm:72, feel:'ballad', swing:0, strum:'Island', key:{pc:5,mode:'major'},
    sections:[{name:'Intro', bars:'F | Bb Bbm | F C7'},
              {name:'Verse', bars:'F | F | Bb Bbm | F C7', reps:2},
-             {name:'Chorus', bars:'C7 Bb | C7 Bb | C7'},
+             {name:'Chorus', bars:'C7 | Bb | C7'},
              {name:'Outro', bars:'F Bb | Bbm F'}]},
   {id:'iz-hawaii78', group:'iz', title:'Hawaiʻi ’78', artist:'Israel Kamakawiwoʻole', bpm:68, feel:'ballad', swing:0, strum:'Folk', key:{pc:2,mode:'major'},
    sections:[{name:'Intro / Verse', bars:'D | Bb C | D', reps:2},
@@ -3799,7 +3799,7 @@ function parseChord(text){
 /* =====================================================================
    Options: build info and update check
    ===================================================================== */
-const WEB_VERSION = '2.6';                 /* build.ps1 refuses to build if this differs from the APK's */
+const WEB_VERSION = '2.7';                 /* build.ps1 refuses to build if this differs from the APK's */
 const VERSION_URL = 'https://chord-shed.vercel.app/version.json';
 const SITE_URL    = 'https://chord-shed.vercel.app';
 
