@@ -15,8 +15,8 @@ foreach ($p in $AAPT, $D8, $ALIGN, $SIGN, $JAR) {
 }
 
 # versionCode must strictly increase or Android refuses the update.
-$VERSION_CODE = 16
-$VERSION_NAME = '2.5'
+$VERSION_CODE = 17
+$VERSION_NAME = '2.6'
 $OUT = 'out'
 
 # The web page shows its own version in Options; it sat at 1.5 through three releases.

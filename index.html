@@ -265,7 +265,7 @@ input[type=range]{flex:1 1 150px; min-width:120px; accent-color:var(--accent)}
 .songartist{margin:0; font-size:19px; color:var(--ink-2)}
 .songmeta{margin:0; font-size:18px; color:var(--ink-2)}
 .transport{display:flex; align-items:center; gap:14px 20px; flex-wrap:wrap; margin-bottom:14px}
-.songs .btn.play{flex:1 1 180px; min-height:60px; font-size:22px; font-weight:600}
+.songs .btn.play{flex:1 1 120px; min-height:60px; font-size:22px; font-weight:600}
 .songs .btn.play.on{background:var(--ochre); border-color:var(--ochre); color:var(--on-accent)}
 .songs .switch{font-size:18px; color:var(--ink); min-height:48px; gap:10px}
 .songs .switch input{width:50px; height:28px; flex:0 0 auto}
@@ -276,10 +276,11 @@ input[type=range]{flex:1 1 150px; min-width:120px; accent-color:var(--accent)}
 .songs .seg{align-self:flex-start; flex-wrap:wrap}
 .songs .seg button{font-size:17px; padding:12px 18px; min-height:48px}
 .lbl{font:600 14px/1 "IBM Plex Sans",sans-serif; letter-spacing:.08em; text-transform:uppercase; color:var(--ink-2)}
-.songs .hint{font-size:15px; color:var(--ink-2)}
+.songs .hint{font-size:16px; color:var(--ink-2)}
 
 .nowcard{margin-bottom:14px}
-.countin{display:flex; justify-content:center; gap:18px; margin-bottom:10px}
+.countin{display:flex; justify-content:center; gap:18px; margin-bottom:10px; visibility:hidden}
+.countin.show{visibility:visible}
 .countin span{font-family:"Bodoni Moda",Georgia,serif; font-size:clamp(48px,14vw,72px); line-height:1; color:var(--ink-2); opacity:.35}
 .countin span.on{color:var(--accent); opacity:1}
 .nowrow{display:flex; align-items:center; gap:16px; flex-wrap:wrap}
@@ -290,7 +291,7 @@ input[type=range]{flex:1 1 150px; min-width:120px; accent-color:var(--accent)}
 .nownext{font-size:32px; line-height:1.1; color:var(--ink-2)}
 .nownext b{font-family:"Bodoni Moda",Georgia,serif; font-weight:600; color:var(--ink)}
 .beats{display:flex; gap:12px; align-items:center; margin-top:6px; min-height:30px}
-.beats span{width:18px; height:18px; border-radius:50%; border:2px solid var(--line-2); transition:transform .08s, background .08s}
+.beats span{width:18px; height:18px; border-radius:50%; border:3px solid var(--ink-2); background:var(--sunk); transition:transform .08s, background .08s}
 .beats span:first-child{width:26px; height:26px}
 .beats span.on{background:var(--ink); border-color:var(--ink); transform:scale(1.15)}
 .beats span:first-child.on{background:var(--accent); border-color:var(--accent)}
@@ -300,7 +301,7 @@ input[type=range]{flex:1 1 150px; min-width:120px; accent-color:var(--accent)}
 .gs{display:flex; flex-direction:column; align-items:center; gap:2px; padding:8px 0 6px; border:1px solid var(--line);
   border-radius:9px; background:var(--paper); min-height:56px}
 .gs b{font-size:26px; line-height:1; font-weight:400}
-.gs small{font:400 12.5px/1 "IBM Plex Mono",monospace; color:var(--ink-2)}
+.gs small{font:400 14px/1 "IBM Plex Mono",monospace; color:var(--ink-2)}
 .gs[data-kind="D"]{background:var(--accent-soft); border-color:var(--accent); color:var(--accent-ink)}
 .gs[data-kind="U"]{background:var(--ochre-soft); border-color:var(--ochre); color:var(--ochre)}
 .gs[data-kind="x"]{background:var(--sunk); border-color:var(--line-2); color:var(--ink-2)}
@@ -316,7 +317,7 @@ input[type=range]{flex:1 1 150px; min-width:120px; accent-color:var(--accent)}
 .trrow{display:flex; align-items:center; gap:12px}
 .trrow .btn{width:56px; height:56px; font-size:26px; padding:0; flex:0 0 auto}
 .trout{font-family:"Bodoni Moda",Georgia,serif; font-size:30px; line-height:1.1; flex:1 1 auto}
-.trout small{display:block; font-family:"IBM Plex Sans",sans-serif; font-size:17px; color:var(--ink-2)}
+.trout small{display:block; font-family:"IBM Plex Sans",sans-serif; font-size:18px; color:var(--ink-2)}
 .switches{gap:12px}
 .levelrow{display:flex; align-items:center; gap:10px}
 .levelrow .lbl{flex:0 0 auto}
@@ -339,7 +340,7 @@ input[type=range]{flex:1 1 150px; min-width:120px; accent-color:var(--accent)}
 .bar:first-child{border-left:0; padding-left:0}
 .ch{font-family:"Bodoni Moda",Georgia,serif; font-size:28px; line-height:1.1; padding:2px 6px; border-radius:6px}
 .ch.now{background:var(--accent); color:var(--on-accent)}
-.repnow{font-size:15px; color:var(--ink-2); min-height:1.3em; margin-top:4px}
+.repnow{font-size:18px; color:var(--ink-2); min-height:1.3em; margin-top:4px}
 
 .songchords{display:flex; flex-wrap:wrap; gap:10px; margin-top:12px}
 .chordcard{flex:1 1 150px; max-width:220px; display:flex; flex-direction:column; align-items:center; gap:4px; padding:10px 8px 6px;
@@ -743,7 +744,7 @@ footer .colophon{flex:1 1 320px; display:flex; flex-direction:column; gap:2px}
         </div>
 
         <div class="card nowcard" id="nowCard">
-          <div class="countin" id="countIn" hidden aria-live="off"><span>1</span><span>2</span><span>3</span><span>4</span></div>
+          <div class="countin" id="countIn" aria-live="off"><span>1</span><span>2</span><span>3</span><span>4</span></div>
           <div class="nowrow">
             <div class="nowmain">
               <div class="nowchord" id="nowChord">—</div>
@@ -769,7 +770,7 @@ footer .colophon{flex:1 1 320px; display:flex; flex-direction:column; gap:2px}
             </div>
             <div class="tempo">
               <div class="bpmval big" id="liveBpmVal">80<small> BPM</small></div>
-              <input type="range" id="liveBpm" min="40" max="200" value="80" aria-label="Tempo in beats per minute">
+              <input type="range" id="liveBpm" min="30" max="200" value="80" aria-label="Tempo in beats per minute">
             </div>
           </div>
           <div class="ctl">
@@ -1609,7 +1610,7 @@ const DRUM_PATTERNS = {
 };
 
 const drums = {
-  level:0.8, gainNode:null, cache:{}, openHat:null,
+  level:0.8, gainNode:null, cache:{}, openHat:null, booked:[],
   /* The kit's bus: gain -> gentle compressor -> the master compressor. */
   ready:function(){
     const ctx = audio.ready(); if (!ctx) return null;
@@ -1774,6 +1775,9 @@ const drums = {
     }
     if (name === 'hatO') this.openHat = {src:src, g:g, t:t, end:t + src.buffer.duration};
     src.start(Math.max(t, ctx.currentTime));
+    this.booked.push({src:src, g:g, t:t, end:t + src.buffer.duration});
+    var now = ctx.currentTime;
+    if (this.booked.length > 64) this.booked = this.booked.filter(function(e){ return e.end > now; });
   },
   /* One 4/4 bar. barStart in context time, beat = seconds per quarter note,
      swing 0..0.5 delays every step that is not on a beat by swing * eighth. */
@@ -1791,7 +1795,14 @@ const drums = {
       }
     });
   },
-  /* Four stick clicks on the beats, the first accented. */
+  cancel:function(at){
+    var now = at || (audio.ctx ? audio.ctx.currentTime : 0);
+    this.booked.forEach(function(e){
+      if (e.t >= now){ try { e.src.stop(now); } catch(x){} }
+      else if (e.end > now){ e.g.gain.setValueAtTime(e.g.gain.value, now); e.g.gain.linearRampToValueAtTime(0, now + 0.03); try { e.src.stop(now + 0.04); } catch(x){} }
+    });
+    this.booked = []; this.openHat = null;
+  },
   countIn:function(start, beat){
     if (!this.ready()) return;
     for (let i = 0; i < 4; i++) this.hit('stick', start + i * beat, i === 0 ? 1 : 0.7);
@@ -1940,7 +1951,7 @@ function load(){
       if (typeof q.fav === 'boolean') p.fav = q.fav;
       if (typeof q.notes === 'string') p.notes = q.notes.slice(0, 4000);
       if (q.pct === 50 || q.pct === 75 || q.pct === 100) p.pct = q.pct;
-      if (typeof q.bpm === 'number' && q.bpm >= 40 && q.bpm <= 200) p.bpm = Math.round(q.bpm);
+      if (typeof q.bpm === 'number' && q.bpm >= 30 && q.bpm <= 200) p.bpm = Math.round(q.bpm);
       if (Number.isInteger(q.transpose) && q.transpose >= -6 && q.transpose <= 6) p.transpose = q.transpose;
       if (typeof q.strum === 'string' && PRESETS.some(function(x){ return x.name === q.strum; })) p.strum = q.strum;
       if (q.reps && typeof q.reps === 'object' && !Array.isArray(q.reps)){
@@ -2867,12 +2878,12 @@ const SONG_LIBRARY = [
              {name:'Wonderful World B', bars:'E7 Am | Dm G7 | C'},
              {name:'Return / Outro', bars:'Dm G7 | C G | Am F | C'}]},
   {id:'iz-whitesandy', group:'iz', title:'White Sandy Beach of Hawaiʻi', artist:'Israel Kamakawiwoʻole',
-   bpm:72, feel:'ballad', swing:0, strum:'Island',
+   bpm:72, feel:'ballad', swing:0, strum:'Island', key:{pc:5,mode:'major'},
    sections:[{name:'Intro', bars:'F | Bb Bbm | F C7'},
              {name:'Verse', bars:'F | F | Bb Bbm | F C7', reps:2},
              {name:'Chorus', bars:'C7 Bb | C7 Bb | C7'},
              {name:'Outro', bars:'F Bb | Bbm F'}]},
-  {id:'iz-hawaii78', group:'iz', title:'Hawaiʻi ’78', artist:'Israel Kamakawiwoʻole', bpm:68, feel:'ballad', swing:0, strum:'Folk',
+  {id:'iz-hawaii78', group:'iz', title:'Hawaiʻi ’78', artist:'Israel Kamakawiwoʻole', bpm:68, feel:'ballad', swing:0, strum:'Folk', key:{pc:2,mode:'major'},
    sections:[{name:'Intro / Verse', bars:'D | Bb C | D', reps:2},
              {name:'Refrain', bars:'Bb C | D', reps:2},
              {name:'Outro', bars:'Bb C | D'}]},
@@ -2937,6 +2948,7 @@ function songChords(s, tr, raw){
   return out;
 }
 function songKeyOf(s, tr){
+  if (s.key) return {pc:((s.key.pc + (tr || 0)) % 12 + 12) % 12, mode:s.key.mode};
   const all = [];
   s.sections.forEach(function(sec){ sec.chords.forEach(function(bar){ bar.forEach(function(ch){
     all.push({pc:((ch.pc + tr) % 12 + 12) % 12, t:ch.t});
@@ -3084,7 +3096,7 @@ const live = {
   loop:null,            /* section index to cycle, or null */
   pendingSec:null,      /* section tapped while playing: jump there at the next bar */
   ended:false, nextTime:0, timer:null, raf:null, drawQueue:[], last:null, lastChord:null,
-  midiCache:{}, svgCache:{}, shownLabel:'', shownSec:-1, wake:null,
+  midiCache:{}, svgCache:{}, shownLabel:'', shownSec:-1, wake:null, userScrollAt:0,
   bpm:function(){ return this.song ? songBpm(this.song) : state.bpm; },
   /* Every bar the arrangement plays, in order, with a chord for each of its 8 eighths. */
   buildPlan:function(s){
@@ -3109,10 +3121,11 @@ const live = {
     const cur = this.plan[this.pos];
     this.plan = this.buildPlan(this.song);
     this.midiCache = {};
-    if (!cur){ this.pos = Math.min(this.pos, this.plan.length); return; }
+    if (!cur){ this.pos = Math.min(this.pos, this.plan.length); if (this.last) this.last.pos = this.pos; return; }
     let i = this.plan.findIndex(function(e){ return e.sec === cur.sec && e.rep === cur.rep && e.bar === cur.bar; });
     if (i < 0) i = this.firstOf(cur.sec);
     this.pos = i;
+    if (this.last) this.last.pos = this.pos;
   },
   /* midisFor runs the voicing search, so remember it per chord for this tuning */
   midis:function(c){
@@ -3131,7 +3144,7 @@ const live = {
     this.pos = fromSec === undefined ? 0 : this.firstOf(fromSec);
     this.step = 0; this.phase = 'count'; this.barCount = 0; this.ended = false; this.pendingSec = null;
     this.drawQueue = []; this.last = null; this.lastChord = null; this.shownLabel = ''; this.shownSec = -1;
-    this.midiCache = {};
+    this.midiCache = {}; this._eighth = 0;
     drums.setLevel(state.prac.drumLevel);
     this.nextTime = ctx.currentTime + 0.1;
     this.on = true;
@@ -3146,8 +3159,9 @@ const live = {
     if (this.raf) cancelAnimationFrame(this.raf);
     this.timer = this.raf = null;
     this.drawQueue = []; this.ended = false; this.pendingSec = null;
+    if (audio.ctx) drums.cancel(audio.ctx.currentTime);
     this.wakeOff();
-    $('countIn').hidden = true;
+    $('countIn').classList.remove('show');
     Array.prototype.forEach.call(document.querySelectorAll('#roadmap .secard.playing'), function(el){ el.classList.remove('playing'); });
     Array.prototype.forEach.call(document.querySelectorAll('#roadmap .ch.now'), function(el){ el.classList.remove('now'); });
     Array.prototype.forEach.call(document.querySelectorAll('#roadmap .repnow'), function(el){ el.textContent = ''; });
@@ -3165,32 +3179,38 @@ const live = {
   },
   schedule:function(){
     const ctx = audio.ctx; if (!ctx || !this.on || this.ended) return;
+    if (ctx.currentTime - this.nextTime > 0.3){
+      this.nextTime = ctx.currentTime + 0.05; this.step = 0;
+      if (this.phase !== 'count') this.pos++;
+      this.drawQueue = [];
+    }
     while (this.nextTime < ctx.currentTime + 0.12){
-      /* tempo is read every pass, so a slider move lands on the next eighth */
-      const eighth = 30 / this.bpm(), beat = eighth * 2, sw = this.song.swing || 0;
+      if (this.step === 0 || !this._eighth) this._eighth = 30 / this.bpm();
+      const eighth = this._eighth, beat = eighth * 2, sw = this.song.swing || 0;
       const when = this.nextTime, step = this.step;
       if (this.phase === 'count'){
-        if (step === 0 && state.prac.drums) drums.countIn(when, beat);
+        const kitOn = state.prac.drums && drums.level > 0.03;
+        if (step === 0 && kitOn) drums.countIn(when, beat);
         if (step % 2 === 0){
-          if (!state.prac.drums) audio.click(when, step === 0);
+          if (!kitOn) audio.click(when, step === 0);
           this.drawQueue.push({t:when, count:step / 2 + 1});
         }
       } else {
+        const kitOn2 = state.prac.drums && drums.level > 0.03;
         if (step === 0){
           this.pos = this.resolve(this.pos);
           if (this.pos < 0){
-            /* Repeat off: finish on one down-strum of the last chord, then stop */
             const c = this.lastChord;
             if (c && state.sound) audio.strum(this.midis(c), tuning().inst, when, 'down', false);
             this.drawQueue.push({t:when, end:true});
             this.ended = true;
             return;
           }
-          if (state.prac.drums) drums.schedule(this.song.feel, when, beat, this.barCount, sw);
+          if (kitOn2) drums.schedule(this.song.feel, when, beat, this.barCount, sw);
         }
         const e = this.plan[this.pos], c = e.slots[step], kind = songStrum(this.song)[step];
-        const t = when + (step % 2 ? sw * eighth : 0);         /* swing delays the off-beat eighths */
-        if (state.click && !state.prac.drums && step % 2 === 0) audio.click(when, step === 0);
+        const t = when + (step % 2 ? sw * eighth : 0);
+        if (state.click && !kitOn2 && step % 2 === 0) audio.click(when, step === 0);
         if (state.sound && kind !== '-') audio.strum(this.midis(c), tuning().inst, t, kind === 'U' ? 'up' : 'down', kind === 'x');
         this.drawQueue.push({t:t, step:step, pos:this.pos, sec:e.sec, bar:e.bar, rep:e.rep, reps:e.reps, ci:e.ci[step], chord:c});
         this.lastChord = c;
@@ -3223,12 +3243,12 @@ const live = {
   },
   paint:function(ev){
     if (ev.count){
-      const ci = $('countIn'); ci.hidden = false;
+      const ci = $('countIn'); ci.classList.add('show');
       Array.prototype.forEach.call(ci.children, function(el, i){ el.classList.toggle('on', i === ev.count - 1); });
       return;
     }
     this.last = ev;
-    $('countIn').hidden = true;
+    $('countIn').classList.remove('show');
     const label = chordLabel(ev.chord.pc, ev.chord.t);
     if (label !== this.shownLabel){
       this.shownLabel = label;
@@ -3245,7 +3265,11 @@ const live = {
         const on = +el.dataset.sec === ev.sec;
         el.classList.toggle('playing', on);
         /* bring the new section into view, but not on the first bar: the user just pressed Play up top */
-        if (on && !first && state.view === 'practice') el.scrollIntoView({block:'center', behavior:reducedMotion() ? 'auto' : 'smooth'});
+        if (on && !first && state.view === 'practice' && document.activeElement !== $('songNotes') &&
+            (!live.userScrollAt || performance.now() - live.userScrollAt > 4000)){
+          var b = el.getBoundingClientRect(), tabTop = $('tabs').getBoundingClientRect().top;
+          if (b.top < 0 || b.bottom > tabTop) el.scrollIntoView({block:'center', behavior:reducedMotion() ? 'auto' : 'smooth'});
+        }
       });
     }
     const rep = road.querySelector('[data-repnow="' + ev.sec + '"]');
@@ -3256,7 +3280,7 @@ const live = {
   },
   /* The next different chord after (pos, step), following the loop and repeat rules. */
   nextLabel:function(plan, pos, step){
-    if (!plan.length) return '';
+    if (!plan.length || !plan[pos]) return '';
     const here = chordLabel(plan[pos].slots[step].pc, plan[pos].slots[step].t);
     let p = pos, s = step;
     for (let n = 0; n < plan.length * 8 + 8; n++){
@@ -3775,7 +3799,7 @@ function parseChord(text){
 /* =====================================================================
    Options: build info and update check
    ===================================================================== */
-const WEB_VERSION = '2.5';                 /* build.ps1 refuses to build if this differs from the APK's */
+const WEB_VERSION = '2.6';                 /* build.ps1 refuses to build if this differs from the APK's */
 const VERSION_URL = 'https://chord-shed.vercel.app/version.json';
 const SITE_URL    = 'https://chord-shed.vercel.app';
 
@@ -4243,6 +4267,7 @@ function init(){
     if (row && e.target === row){ e.preventDefault(); openSong(row.dataset.song); }
   });
   $('songBack').addEventListener('click', closeSong);
+  ['touchstart','wheel'].forEach(function(t){ window.addEventListener(t, function(){ live.userScrollAt = performance.now(); }, {passive:true}); });
   $('livePlay').addEventListener('click', function(){
     const s = songById(songOpen); if (!s) return;
     if (live.on) live.stop(); else live.start(s);
@@ -4257,7 +4282,7 @@ function init(){
   $('liveBpm').addEventListener('input', function(e){
     const s = songById(songOpen); if (!s) return;
     const p = songPref(s.id);
-    p.bpm = Math.min(200, Math.max(40, +e.target.value)); p.pct = null;   /* the slider is absolute: no % applies */
+    p.bpm = Math.min(200, Math.max(30, +e.target.value)); p.pct = null;   /* the slider is absolute: no % applies */
     $('liveBpmVal').innerHTML = p.bpm + '<small> BPM</small>';
     Array.prototype.forEach.call($('tempoPct').children, function(x){ x.setAttribute('aria-pressed', 'false'); });
   });
